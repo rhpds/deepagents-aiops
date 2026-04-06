@@ -1,0 +1,30 @@
+---
+namespace: rhpds
+name: deepagents_aiops
+version: 0.1.0
+readme: README.md
+
+authors:
+  - Tony Kay <ankay@redhat.com>
+
+description: >-
+  Ansible workloads for the Deep Agents AIOps lab.
+  Provides RHEL VM provisioning on OpenShift Virtualization.
+
+license:
+  - GPL-2.0-or-later
+
+tags:
+  - cloud
+  - openshift
+  - kubevirt
+
+dependencies:
+  kubernetes.core: ">=2.4.0"
+
+repository: https://github.com/rhpds/deepagents-aiops
+documentation: https://github.com/rhpds/deepagents-aiops
+homepage: https://github.com/rhpds/deepagents-aiops
+issues: https://github.com/rhpds/deepagents-aiops/issues
+
+build_ignore: []
