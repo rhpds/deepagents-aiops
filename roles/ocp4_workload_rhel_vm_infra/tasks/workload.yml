@@ -1,0 +1,46 @@
+---
+- name: Assert OpenShift Virtualization is installed
+  kubernetes.core.k8s_info:
+    api_version: hco.kubevirt.io/v1beta1
+    kind: HyperConverged
+    namespace: openshift-cnv
+  register: r_hyperconverged
+
+- name: Fail if OpenShift Virtualization is not installed
+  ansible.builtin.assert:
+    that:
+      - r_hyperconverged.resources | length > 0
+    fail_msg: >-
+      OpenShift Virtualization (HyperConverged) is not installed.
+      Deploy ocp4_workload_openshift_virtualization on the cluster first.
+
+- name: Create S3 credentials secret
+  when: ocp4_workload_rhel_vm_infra_datavolume_s3_access_key_id | default('') | length > 0
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'secret-s3.yaml.j2') | from_yaml }}"
+  no_log: true
+
+- name: Create DataVolume for RHEL base image
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'datavolume.yaml.j2') | from_yaml }}"
+
+- name: Wait for DataVolume to reach Succeeded phase
+  kubernetes.core.k8s_info:
+    api_version: cdi.kubevirt.io/v1beta1
+    kind: DataVolume
+    name: "{{ ocp4_workload_rhel_vm_infra_datavolume_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}"
+  register: r_datavolume
+  retries: "{{ ocp4_workload_rhel_vm_infra_datavolume_retries }}"
+  delay: "{{ ocp4_workload_rhel_vm_infra_datavolume_retry_delay }}"
+  until:
+    - r_datavolume.resources | length > 0
+    - r_datavolume.resources[0].status.phase is defined
+    - r_datavolume.resources[0].status.phase == "Succeeded"
+
+- name: Create DataSource referencing the base image PVC
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'datasource.yaml.j2') | from_yaml }}"

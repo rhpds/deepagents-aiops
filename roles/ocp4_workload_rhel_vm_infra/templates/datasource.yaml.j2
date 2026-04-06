@@ -1,0 +1,11 @@
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataSource
+metadata:
+  name: {{ ocp4_workload_rhel_vm_infra_datavolume_name }}
+  namespace: {{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}
+spec:
+  source:
+    pvc:
+      name: {{ ocp4_workload_rhel_vm_infra_datavolume_name }}
+      namespace: {{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}

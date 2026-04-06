@@ -1,0 +1,25 @@
+---
+- name: Remove DataSource
+  kubernetes.core.k8s:
+    state: absent
+    api_version: cdi.kubevirt.io/v1beta1
+    kind: DataSource
+    name: "{{ ocp4_workload_rhel_vm_infra_datavolume_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}"
+
+- name: Remove DataVolume
+  kubernetes.core.k8s:
+    state: absent
+    api_version: cdi.kubevirt.io/v1beta1
+    kind: DataVolume
+    name: "{{ ocp4_workload_rhel_vm_infra_datavolume_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}"
+
+- name: Remove S3 credentials secret
+  when: ocp4_workload_rhel_vm_infra_datavolume_s3_access_key_id | default('') | length > 0
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Secret
+    name: "{{ ocp4_workload_rhel_vm_infra_s3_secret_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}"

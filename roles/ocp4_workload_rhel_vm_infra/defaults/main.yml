@@ -1,0 +1,26 @@
+---
+# ===================================================================
+# Role: ocp4_workload_rhel_vm_infra
+# Downloads a RHEL qcow2 image and creates a DataVolume + DataSource
+# in openshift-virtualization-os-images.
+# ===================================================================
+
+# Image source URL (HTTP or S3)
+ocp4_workload_rhel_vm_infra_datavolume_source: ""
+
+# DataVolume identity
+ocp4_workload_rhel_vm_infra_datavolume_name: rhel-base
+ocp4_workload_rhel_vm_infra_datavolume_namespace: openshift-virtualization-os-images
+ocp4_workload_rhel_vm_infra_datavolume_size: 10Gi
+
+# Storage class — must use Immediate binding to avoid WaitForFirstConsumer deadlock
+ocp4_workload_rhel_vm_infra_datavolume_storage_class: ocs-external-storagecluster-ceph-rbd-immediate
+
+# S3 credentials (optional — leave empty for plain HTTP source)
+ocp4_workload_rhel_vm_infra_datavolume_s3_access_key_id: ""
+ocp4_workload_rhel_vm_infra_datavolume_s3_secret_access_key: ""
+ocp4_workload_rhel_vm_infra_s3_secret_name: "{{ ocp4_workload_rhel_vm_infra_datavolume_name }}-s3-credentials"
+
+# Retry configuration for DataVolume readiness
+ocp4_workload_rhel_vm_infra_datavolume_retries: 60
+ocp4_workload_rhel_vm_infra_datavolume_retry_delay: 10

@@ -1,0 +1,21 @@
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: {{ ocp4_workload_rhel_vm_infra_datavolume_name }}
+  namespace: {{ ocp4_workload_rhel_vm_infra_datavolume_namespace }}
+spec:
+  source:
+{% if ocp4_workload_rhel_vm_infra_datavolume_s3_access_key_id | default('') | length > 0 %}
+    s3:
+      url: {{ ocp4_workload_rhel_vm_infra_datavolume_source }}
+      secretRef: {{ ocp4_workload_rhel_vm_infra_s3_secret_name }}
+{% else %}
+    http:
+      url: {{ ocp4_workload_rhel_vm_infra_datavolume_source }}
+{% endif %}
+  storage:
+    storageClassName: {{ ocp4_workload_rhel_vm_infra_datavolume_storage_class }}
+    resources:
+      requests:
+        storage: {{ ocp4_workload_rhel_vm_infra_datavolume_size }}
