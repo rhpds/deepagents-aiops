@@ -1,0 +1,170 @@
+---
+# ===================================================================
+# Configure AAP2 Controller for this tenant
+# Uses infra.controller_configuration roles for idempotent setup
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1. Organization
+# -------------------------------------------------------------------
+- name: Create AAP2 organization
+  infra.controller_configuration.organizations:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_organizations:
+      - name: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: present
+
+# -------------------------------------------------------------------
+# 2. User (org admin)
+# -------------------------------------------------------------------
+- name: Create AAP2 user
+  infra.controller_configuration.users:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_user_accounts:
+      - username: "{{ ocp4_workload_aap2_tenant_config_username }}"
+        password: "{{ ocp4_workload_aap2_tenant_config_user_password }}"
+        email: "{{ ocp4_workload_aap2_tenant_config_user_email }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: present
+  no_log: true
+
+- name: Add user as org admin
+  infra.controller_configuration.roles:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_roles:
+      - user: "{{ ocp4_workload_aap2_tenant_config_username }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        role: admin
+
+# -------------------------------------------------------------------
+# 3. Credentials
+# -------------------------------------------------------------------
+- name: Create machine credential for RHEL VM
+  infra.controller_configuration.credentials:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_credentials:
+      - name: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        credential_type: Machine
+        inputs:
+          username: "{{ ocp4_workload_aap2_tenant_config_vm_user }}"
+          password: "{{ ocp4_workload_aap2_tenant_config_vm_password }}"
+        state: present
+  no_log: true
+
+- name: Create OpenShift credential
+  infra.controller_configuration.credentials:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_credentials:
+      - name: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        credential_type: "OpenShift or Kubernetes API Bearer Token"
+        inputs:
+          host: "{{ ocp4_workload_aap2_tenant_config_ocp_host }}"
+          username: "{{ ocp4_workload_aap2_tenant_config_ocp_username }}"
+          password: "{{ ocp4_workload_aap2_tenant_config_ocp_password }}"
+          verify_ssl: false
+        state: present
+  no_log: true
+
+# -------------------------------------------------------------------
+# 4. Inventory with VM host
+# -------------------------------------------------------------------
+- name: Create inventory
+  infra.controller_configuration.inventories:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_inventories:
+      - name: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: present
+
+- name: Add RHEL VM to inventory
+  infra.controller_configuration.hosts:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_hosts:
+      - name: "{{ ocp4_workload_aap2_tenant_config_vm_hostname }}"
+        inventory: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
+        state: present
+
+# -------------------------------------------------------------------
+# 5. Project
+# -------------------------------------------------------------------
+- name: Create project from plays repo
+  infra.controller_configuration.projects:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_projects:
+      - name: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        scm_type: git
+        scm_url: "{{ ocp4_workload_aap2_tenant_config_project_scm_url }}"
+        scm_branch: "{{ ocp4_workload_aap2_tenant_config_project_scm_branch }}"
+        scm_update_on_launch: true
+        state: present
+
+- name: Wait for project sync to complete
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_aap2_tenant_config_controller_host }}/api/v2/projects/?name={{ ocp4_workload_aap2_tenant_config_project_name | urlencode }}"
+    user: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    method: GET
+  register: r_project_status
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  until:
+    - r_project_status.json.results | length > 0
+    - r_project_status.json.results[0].status == "successful"
+
+# -------------------------------------------------------------------
+# 6. Job templates
+# -------------------------------------------------------------------
+- name: Create Ping RHEL VM job template
+  infra.controller_configuration.job_templates:
+    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_templates:
+      - name: "{{ ocp4_workload_aap2_tenant_config_job_template_ping_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        project: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
+        inventory: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
+        playbook: ping.yml
+        credentials:
+          - "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+        state: present
+
+# -------------------------------------------------------------------
+# 7. Save user info
+# -------------------------------------------------------------------
+- name: Save AAP2 tenant config to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      aap2_username: "{{ ocp4_workload_aap2_tenant_config_username }}"
+      aap2_password: "{{ ocp4_workload_aap2_tenant_config_user_password }}"
+      aap2_organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
