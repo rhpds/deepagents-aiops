@@ -1,0 +1,34 @@
+---
+# ===================================================================
+# Role: ocp4_workload_rhel_vm_tenant
+# Creates a per-tenant RHEL VM with SSH service.
+# ===================================================================
+
+# VM identity
+ocp4_workload_rhel_vm_tenant_vm_name: rhel
+ocp4_workload_rhel_vm_tenant_vm_namespace: "{{ ocp4_workload_username }}-rhel"
+ocp4_workload_rhel_vm_tenant_vm_disksize: 10Gi
+ocp4_workload_rhel_vm_tenant_vm_instancetype: u1.medium
+ocp4_workload_rhel_vm_tenant_vm_preference: rhel.10
+
+# DataSource reference (must match infra role output)
+ocp4_workload_rhel_vm_tenant_vm_datasource_name: rhel-base
+ocp4_workload_rhel_vm_tenant_vm_datasource_namespace: openshift-virtualization-os-images
+
+# Storage class for the clone PVC — must use Immediate binding
+ocp4_workload_rhel_vm_tenant_vm_storage_class: ocs-external-storagecluster-ceph-rbd-immediate
+
+# VM user credentials
+ocp4_workload_rhel_vm_tenant_vm_user: rhel
+ocp4_workload_rhel_vm_tenant_vm_password: "{{ ocp4_workload_user_password | default(common_password) }}"
+ocp4_workload_rhel_vm_tenant_vm_ssh_pwauth: true
+
+# Cloud-init init script (optional — leave empty to skip)
+ocp4_workload_rhel_vm_tenant_vm_init_script_url: ""
+
+# Retry configuration for VM readiness
+ocp4_workload_rhel_vm_tenant_vm_ready_retries: 60
+ocp4_workload_rhel_vm_tenant_vm_ready_retry_delay: 10
+
+# SSH service name
+ocp4_workload_rhel_vm_tenant_vm_ssh_service_name: "{{ ocp4_workload_rhel_vm_tenant_vm_name }}-ssh"

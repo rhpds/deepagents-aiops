@@ -1,0 +1,52 @@
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: {{ ocp4_workload_rhel_vm_tenant_vm_name }}
+  namespace: {{ ocp4_workload_rhel_vm_tenant_vm_namespace }}
+  labels:
+    app: {{ ocp4_workload_rhel_vm_tenant_vm_name }}
+spec:
+  running: true
+  instancetype:
+    name: {{ ocp4_workload_rhel_vm_tenant_vm_instancetype }}
+    kind: VirtualMachineClusterInstancetype
+  preference:
+    name: {{ ocp4_workload_rhel_vm_tenant_vm_preference }}
+    kind: VirtualMachineClusterPreference
+  dataVolumeTemplates:
+    - metadata:
+        name: {{ ocp4_workload_rhel_vm_tenant_vm_name }}-volume
+      spec:
+        sourceRef:
+          kind: DataSource
+          name: {{ ocp4_workload_rhel_vm_tenant_vm_datasource_name }}
+          namespace: {{ ocp4_workload_rhel_vm_tenant_vm_datasource_namespace }}
+        storage:
+          storageClassName: {{ ocp4_workload_rhel_vm_tenant_vm_storage_class }}
+          resources:
+            requests:
+              storage: {{ ocp4_workload_rhel_vm_tenant_vm_disksize }}
+  template:
+    metadata:
+      labels:
+        app: {{ ocp4_workload_rhel_vm_tenant_vm_name }}
+        kubevirt.io/domain: {{ ocp4_workload_rhel_vm_tenant_vm_name }}
+    spec:
+      domain:
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: {{ ocp4_workload_rhel_vm_tenant_vm_name }}-volume
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              {{ lookup('ansible.builtin.template', 'cloudinit-userdata.yaml.j2') | indent(14) }}

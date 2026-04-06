@@ -1,0 +1,16 @@
+#cloud-config
+user: {{ ocp4_workload_rhel_vm_tenant_vm_user }}
+password: {{ ocp4_workload_rhel_vm_tenant_vm_password }}
+chpasswd:
+  expire: false
+ssh_pwauth: {{ ocp4_workload_rhel_vm_tenant_vm_ssh_pwauth | lower }}
+users:
+  - name: {{ ocp4_workload_rhel_vm_tenant_vm_user }}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    plain_text_passwd: {{ ocp4_workload_rhel_vm_tenant_vm_password }}
+    shell: /bin/bash
+{% if ocp4_workload_rhel_vm_tenant_vm_init_script_url | default('') | length > 0 %}
+runcmd:
+  - curl -sSL {{ ocp4_workload_rhel_vm_tenant_vm_init_script_url }} | bash
+{% endif %}

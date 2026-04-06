@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ ocp4_workload_rhel_vm_tenant_vm_ssh_service_name }}
+  namespace: {{ ocp4_workload_rhel_vm_tenant_vm_namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ ocp4_workload_rhel_vm_tenant_vm_name }}
+  ports:
+    - name: ssh
+      protocol: TCP
+      port: 22
+      targetPort: 22

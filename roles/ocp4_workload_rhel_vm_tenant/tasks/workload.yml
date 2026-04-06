@@ -1,0 +1,34 @@
+---
+- name: Create VirtualMachine
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'vm.yaml.j2') | from_yaml }}"
+
+- name: Create SSH ClusterIP service
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('ansible.builtin.template', 'service-ssh.yaml.j2') | from_yaml }}"
+
+- name: Wait for VirtualMachineInstance to be Ready
+  kubernetes.core.k8s_info:
+    api_version: kubevirt.io/v1
+    kind: VirtualMachineInstance
+    name: "{{ ocp4_workload_rhel_vm_tenant_vm_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_tenant_vm_namespace }}"
+  register: r_vmi
+  retries: "{{ ocp4_workload_rhel_vm_tenant_vm_ready_retries }}"
+  delay: "{{ ocp4_workload_rhel_vm_tenant_vm_ready_retry_delay }}"
+  until:
+    - r_vmi.resources | length > 0
+    - r_vmi.resources[0].status is defined
+    - r_vmi.resources[0].status.phase is defined
+    - r_vmi.resources[0].status.phase == "Running"
+
+- name: Save VM connection info to agnosticd_user_info
+  agnosticd_user_info:
+    data:
+      rhel_vm_name: "{{ ocp4_workload_rhel_vm_tenant_vm_name }}"
+      rhel_vm_user: "{{ ocp4_workload_rhel_vm_tenant_vm_user }}"
+      rhel_vm_password: "{{ ocp4_workload_rhel_vm_tenant_vm_password }}"
+      rhel_vm_hostname: >-
+        {{ ocp4_workload_rhel_vm_tenant_vm_ssh_service_name }}.{{ ocp4_workload_rhel_vm_tenant_vm_namespace }}.svc.cluster.local

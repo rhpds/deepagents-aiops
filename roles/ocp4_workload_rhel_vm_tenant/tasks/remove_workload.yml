@@ -1,0 +1,16 @@
+---
+- name: Remove VirtualMachine
+  kubernetes.core.k8s:
+    state: absent
+    api_version: kubevirt.io/v1
+    kind: VirtualMachine
+    name: "{{ ocp4_workload_rhel_vm_tenant_vm_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_tenant_vm_namespace }}"
+
+- name: Remove SSH service
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Service
+    name: "{{ ocp4_workload_rhel_vm_tenant_vm_ssh_service_name }}"
+    namespace: "{{ ocp4_workload_rhel_vm_tenant_vm_namespace }}"
