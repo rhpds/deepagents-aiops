@@ -99,8 +99,7 @@
     credential_type: "OpenShift or Kubernetes API Bearer Token"
     inputs:
       host: "{{ ocp4_workload_aap2_tenant_config_ocp_host }}"
-      username: "{{ ocp4_workload_aap2_tenant_config_ocp_username }}"
-      password: "{{ ocp4_workload_aap2_tenant_config_ocp_password }}"
+      bearer_token: "{{ ocp4_workload_aap2_tenant_config_ocp_token }}"
       verify_ssl: false
     state: present
     controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"

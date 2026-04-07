@@ -3,72 +3,97 @@
 # Remove AAP2 Controller tenant configuration
 # ===================================================================
 
-- name: Remove job templates
-  ansible.controller.job_template:
-    name: "{{ ocp4_workload_aap2_tenant_config_job_template_ping_name }}"
-    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+# -------------------------------------------------------------------
+# 0. Read AAP admin credentials from cluster secret
+# -------------------------------------------------------------------
+- name: Get AAP admin credentials secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ ocp4_workload_aap2_tenant_config_admin_credentials_secret }}"
+    namespace: "{{ ocp4_workload_aap2_tenant_config_admin_credentials_namespace }}"
+  register: r_aap_admin_secret
 
-- name: Remove project
-  ansible.controller.project:
-    name: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
-    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+- name: Extract AAP admin credentials from secret
+  when: r_aap_admin_secret.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_aap2_tenant_config_controller_host: >-
+      {{ r_aap_admin_secret.resources[0].data.url | b64decode }}
+    _ocp4_workload_aap2_tenant_config_controller_username: >-
+      {{ r_aap_admin_secret.resources[0].data.username | b64decode }}
+    _ocp4_workload_aap2_tenant_config_controller_password: >-
+      {{ r_aap_admin_secret.resources[0].data.password | b64decode }}
+  no_log: true
 
-- name: Remove inventory
-  ansible.controller.inventory:
-    name: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
-    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+- name: Remove resources
+  when: r_aap_admin_secret.resources | length > 0
+  block:
+    - name: Remove job templates
+      ansible.controller.job_template:
+        name: "{{ ocp4_workload_aap2_tenant_config_job_template_ping_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
-- name: Remove machine credential
-  ansible.controller.credential:
-    name: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
-    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    credential_type: Machine
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    - name: Remove project
+      ansible.controller.project:
+        name: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
-- name: Remove OpenShift credential
-  ansible.controller.credential:
-    name: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
-    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    credential_type: "OpenShift or Kubernetes API Bearer Token"
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    - name: Remove inventory
+      ansible.controller.inventory:
+        name: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
-- name: Remove user
-  ansible.controller.user:
-    username: "{{ ocp4_workload_aap2_tenant_config_username }}"
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    - name: Remove machine credential
+      ansible.controller.credential:
+        name: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        credential_type: Machine
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
-- name: Remove organization
-  ansible.controller.organization:
-    name: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    state: absent
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    - name: Remove OpenShift credential
+      ansible.controller.credential:
+        name: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        credential_type: "OpenShift or Kubernetes API Bearer Token"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+
+    - name: Remove user
+      ansible.controller.user:
+        username: "{{ ocp4_workload_aap2_tenant_config_username }}"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+
+    - name: Remove organization
+      ansible.controller.organization:
+        name: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"

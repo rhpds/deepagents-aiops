@@ -26,11 +26,10 @@ ocp4_workload_aap2_tenant_config_vm_user: "{{ rhel_vm_user | default('rhel') }}"
 ocp4_workload_aap2_tenant_config_vm_password: "{{ rhel_vm_password | default(common_password) }}"
 ocp4_workload_aap2_tenant_config_vm_hostname: "{{ rhel_vm_hostname | default('rhel-ssh.' ~ ocp4_workload_username ~ '-rhel.svc.cluster.local') }}"
 
-# OpenShift credential
+# OpenShift credential (bearer token)
 ocp4_workload_aap2_tenant_config_ocp_credential_name: "{{ guid }}-openshift"
 ocp4_workload_aap2_tenant_config_ocp_host: "{{ openshift_api_url }}"
-ocp4_workload_aap2_tenant_config_ocp_username: "{{ ocp4_workload_username | default('user-' ~ guid) }}"
-ocp4_workload_aap2_tenant_config_ocp_password: "{{ ocp4_workload_user_password | default(common_password) }}"
+ocp4_workload_aap2_tenant_config_ocp_token: "{{ openshift_cluster_admin_token | default('') }}"
 
 # Inventory
 ocp4_workload_aap2_tenant_config_inventory_name: "{{ guid }}-inventory"
