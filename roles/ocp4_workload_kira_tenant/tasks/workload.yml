@@ -1,0 +1,154 @@
+---
+# ===================================================================
+# Deploy Kira trouble ticketing app per tenant via Helm
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1. Clone Kira repo for Helm chart
+# -------------------------------------------------------------------
+- name: Clone Kira repository
+  ansible.builtin.git:
+    repo: "{{ ocp4_workload_kira_tenant_helm_repo }}"
+    dest: /tmp/kira-helm
+    version: "{{ ocp4_workload_kira_tenant_helm_repo_ref }}"
+    force: true
+
+# -------------------------------------------------------------------
+# 2. Generate Helm values
+# -------------------------------------------------------------------
+- name: Template Helm values file
+  ansible.builtin.template:
+    src: helm-values.yaml.j2
+    dest: /tmp/kira-helm-values.yaml
+    mode: "0644"
+
+# -------------------------------------------------------------------
+# 3. Deploy via Helm
+# -------------------------------------------------------------------
+- name: Deploy Kira via Helm
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_kira_tenant_release_name }}"
+    chart_ref: "/tmp/kira-helm/{{ ocp4_workload_kira_tenant_helm_chart_path }}"
+    release_namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    values_files:
+      - /tmp/kira-helm-values.yaml
+    state: present
+    wait: true
+    timeout: 5m0s
+
+# -------------------------------------------------------------------
+# 4. Add LLM environment variables to API configmap
+# -------------------------------------------------------------------
+- name: Patch Kira API configmap with LLM settings
+  when: ocp4_workload_kira_tenant_llm_base_url | default('') | length > 0
+  kubernetes.core.k8s:
+    state: patched
+    api_version: v1
+    kind: ConfigMap
+    name: "{{ ocp4_workload_kira_tenant_release_name }}-config"
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    definition:
+      data:
+        KIRA_LLM_BASE_URL: "{{ ocp4_workload_kira_tenant_llm_base_url }}"
+        KIRA_LLM_MODEL: "{{ ocp4_workload_kira_tenant_llm_model }}"
+
+- name: Patch Kira API secret with LLM API key
+  when: ocp4_workload_kira_tenant_llm_api_key | default('') | length > 0
+  kubernetes.core.k8s:
+    state: patched
+    api_version: v1
+    kind: Secret
+    name: "{{ ocp4_workload_kira_tenant_release_name }}-secrets"
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    definition:
+      stringData:
+        KIRA_LLM_API_KEY: "{{ ocp4_workload_kira_tenant_llm_api_key }}"
+  no_log: true
+
+# -------------------------------------------------------------------
+# 5. Restart API to pick up LLM config
+# -------------------------------------------------------------------
+- name: Restart Kira API deployment to pick up LLM config
+  when: ocp4_workload_kira_tenant_llm_base_url | default('') | length > 0
+  kubernetes.core.k8s:
+    state: patched
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_kira_tenant_release_name }}-api"
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    definition:
+      spec:
+        template:
+          metadata:
+            annotations:
+              kubectl.kubernetes.io/restartedAt: "{{ ansible_date_time.iso8601 }}"
+
+# -------------------------------------------------------------------
+# 6. Wait for API to be ready
+# -------------------------------------------------------------------
+- name: Wait for Kira API deployment to be available
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_kira_tenant_release_name }}-api"
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+  register: r_kira_api
+  retries: "{{ ocp4_workload_kira_tenant_deploy_retries }}"
+  delay: "{{ ocp4_workload_kira_tenant_deploy_retry_delay }}"
+  until:
+    - r_kira_api.resources | length > 0
+    - r_kira_api.resources[0].status.readyReplicas is defined
+    - r_kira_api.resources[0].status.readyReplicas >= 1
+
+# -------------------------------------------------------------------
+# 7. Run database migration
+# -------------------------------------------------------------------
+- name: Run Kira database migration
+  kubernetes.core.k8s_exec:
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    pod: "{{ r_kira_api.resources[0].spec.template.metadata.labels | dict2items | map(attribute='key') | first }}"
+    command: uv run alembic upgrade head
+  register: r_migration
+  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
+  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
+  until: r_migration is succeeded
+  ignore_errors: true
+
+# -------------------------------------------------------------------
+# 8. Get Kira route URL
+# -------------------------------------------------------------------
+- name: Get Kira frontend route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=frontend"
+  register: r_kira_route
+
+- name: Set Kira URL fact
+  when: r_kira_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_kira_tenant_url: "https://{{ r_kira_route.resources[0].spec.host }}"
+
+# -------------------------------------------------------------------
+# 9. Save user info
+# -------------------------------------------------------------------
+- name: Save Kira connection info to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      kira_url: "{{ _ocp4_workload_kira_tenant_url | default('') }}"
+      kira_api_key: "{{ ocp4_workload_kira_tenant_api_key }}"
+
+# -------------------------------------------------------------------
+# 10. Cleanup temp files
+# -------------------------------------------------------------------
+- name: Clean up Kira temp files
+  ansible.builtin.file:
+    path: "{{ cleanup_item }}"
+    state: absent
+  loop:
+    - /tmp/kira-helm
+    - /tmp/kira-helm-values.yaml
+  loop_control:
+    loop_var: cleanup_item

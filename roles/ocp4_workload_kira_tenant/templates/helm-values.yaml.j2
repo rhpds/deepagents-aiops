@@ -1,0 +1,42 @@
+namespace: {{ ocp4_workload_kira_tenant_namespace }}
+
+api:
+  image:
+    repository: {{ ocp4_workload_kira_tenant_api_image }}
+    tag: "{{ ocp4_workload_kira_tenant_api_tag }}"
+    pullPolicy: IfNotPresent
+
+frontend:
+  image:
+    repository: {{ ocp4_workload_kira_tenant_frontend_image }}
+    tag: "{{ ocp4_workload_kira_tenant_frontend_tag }}"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+
+postgres:
+  enabled: true
+  image:
+    repository: {{ ocp4_workload_kira_tenant_postgres_image }}
+    tag: "{{ ocp4_workload_kira_tenant_postgres_tag }}"
+  storage: {{ ocp4_workload_kira_tenant_postgres_storage }}
+  credentials:
+    user: kira
+    password: {{ ocp4_workload_kira_tenant_postgres_password }}
+    database: kira
+
+kira:
+  apiKey: {{ ocp4_workload_kira_tenant_api_key }}
+  secretKey: {{ ocp4_workload_kira_tenant_secret_key }}
+  artifactStoragePath: /app/artifacts
+  allowIframe: {{ ocp4_workload_kira_tenant_allow_iframe | lower }}
+  corsOrigins: "{{ ocp4_workload_kira_tenant_cors_origins }}"
+
+artifacts:
+  storage: {{ ocp4_workload_kira_tenant_artifact_storage }}
+
+route:
+  enabled: true
+{% if ocp4_workload_kira_tenant_route_host | default('') | length > 0 %}
+  host: {{ ocp4_workload_kira_tenant_route_host }}
+{% endif %}

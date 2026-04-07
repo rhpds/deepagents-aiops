@@ -1,0 +1,11 @@
+---
+# ===================================================================
+# Remove Kira trouble ticketing app
+# ===================================================================
+
+- name: Remove Kira Helm release
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_kira_tenant_release_name }}"
+    release_namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    state: absent
+    wait: true
