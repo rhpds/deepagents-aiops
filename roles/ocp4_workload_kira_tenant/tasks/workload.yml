@@ -75,6 +75,13 @@
 # -------------------------------------------------------------------
 # 5. Restart API to pick up LLM config
 # -------------------------------------------------------------------
+- name: Get current timestamp for restart annotation
+  when: ocp4_workload_kira_tenant_llm_base_url | default('') | length > 0
+  ansible.builtin.command:
+    cmd: date -u +%Y-%m-%dT%H:%M:%SZ
+  register: r_timestamp
+  changed_when: false
+
 - name: Restart Kira API deployment to pick up LLM config
   when: ocp4_workload_kira_tenant_llm_base_url | default('') | length > 0
   kubernetes.core.k8s:
@@ -88,7 +95,7 @@
         template:
           metadata:
             annotations:
-              kubectl.kubernetes.io/restartedAt: "{{ ansible_date_time.iso8601 }}"
+              kubectl.kubernetes.io/restartedAt: "{{ r_timestamp.stdout }}"
 
 # -------------------------------------------------------------------
 # 6. Wait for API to be ready
