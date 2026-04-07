@@ -20,9 +20,7 @@ tags:
   - openshift
   - kubevirt
 
-dependencies:
-  kubernetes.core: ">=2.4.0"
-  ansible.controller: ">=4.0.0"
+dependencies: {}
 
 repository: https://github.com/rhpds/deepagents-aiops
 documentation: https://github.com/rhpds/deepagents-aiops
