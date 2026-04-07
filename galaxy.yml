@@ -22,7 +22,8 @@ tags:
 
 dependencies:
   kubernetes.core: ">=2.4.0"
-  infra.controller_configuration: ">=2.0.0"
+  ansible.controller: ">=4.0.0"
+  ansible.platform: ">=2.0.0"
 
 repository: https://github.com/rhpds/deepagents-aiops
 documentation: https://github.com/rhpds/deepagents-aiops
