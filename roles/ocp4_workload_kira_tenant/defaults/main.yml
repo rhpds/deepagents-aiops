@@ -19,8 +19,8 @@ ocp4_workload_kira_tenant_frontend_image: quay.io/rhpds/kira-frontend
 ocp4_workload_kira_tenant_frontend_tag: latest
 
 # PostgreSQL
-ocp4_workload_kira_tenant_postgres_image: registry.redhat.io/rhel10/postgresql-16
-ocp4_workload_kira_tenant_postgres_tag: latest
+ocp4_workload_kira_tenant_postgres_image: postgres
+ocp4_workload_kira_tenant_postgres_tag: "16"
 ocp4_workload_kira_tenant_postgres_password: "{{ common_password | default('kira') }}"
 ocp4_workload_kira_tenant_postgres_storage: 1Gi
 
