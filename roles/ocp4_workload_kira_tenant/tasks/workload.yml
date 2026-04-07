@@ -41,8 +41,7 @@
     values_files:
       - /tmp/kira-helm-values.yaml
     state: present
-    wait: true
-    timeout: 5m0s
+    wait: false
 
 # -------------------------------------------------------------------
 # 4. Add LLM environment variables to API configmap
