@@ -4,44 +4,52 @@
 # ===================================================================
 
 - name: Remove job templates
-  infra.controller_configuration.job_templates:
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+  ansible.builtin.include_role:
+    name: infra.controller_configuration.job_templates
+  vars:
+    controller_hostname: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
     controller_templates:
       - name: "{{ ocp4_workload_aap2_tenant_config_job_template_ping_name }}"
         organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
         state: absent
 
 - name: Remove project
-  infra.controller_configuration.projects:
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+  ansible.builtin.include_role:
+    name: infra.controller_configuration.projects
+  vars:
+    controller_hostname: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
     controller_projects:
       - name: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
         organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
         state: absent
 
 - name: Remove inventory
-  infra.controller_configuration.inventories:
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+  ansible.builtin.include_role:
+    name: infra.controller_configuration.inventories
+  vars:
+    controller_hostname: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
     controller_inventories:
       - name: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
         organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
         state: absent
 
 - name: Remove credentials
-  infra.controller_configuration.credentials:
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+  ansible.builtin.include_role:
+    name: infra.controller_configuration.credentials
+  vars:
+    controller_hostname: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
     controller_credentials:
       - name: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
         organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
@@ -53,21 +61,25 @@
         state: absent
 
 - name: Remove user
-  infra.controller_configuration.users:
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+  ansible.builtin.include_role:
+    name: infra.controller_configuration.users
+  vars:
+    controller_hostname: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
     controller_user_accounts:
       - username: "{{ ocp4_workload_aap2_tenant_config_username }}"
         state: absent
 
 - name: Remove organization
-  infra.controller_configuration.organizations:
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
+  ansible.builtin.include_role:
+    name: infra.controller_configuration.organizations
+  vars:
+    controller_hostname: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
-    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    controller_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
     controller_organizations:
       - name: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
         state: absent
