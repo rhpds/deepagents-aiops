@@ -6,9 +6,10 @@
 # ===================================================================
 
 # AAP2 Controller connection
-ocp4_workload_aap2_tenant_config_controller_host: "https://aap-aap.{{ openshift_cluster_ingress_domain }}"
-ocp4_workload_aap2_tenant_config_controller_password: ""
-ocp4_workload_aap2_tenant_config_controller_username: admin
+# Credentials are read from the aap-admin-credentials secret in the AAP namespace
+# (created by ocp4_workload_ansible_automation_platform with save_admin_credentials: true)
+ocp4_workload_aap2_tenant_config_admin_credentials_secret: aap-admin-credentials
+ocp4_workload_aap2_tenant_config_admin_credentials_namespace: aap
 ocp4_workload_aap2_tenant_config_validate_certs: false
 
 # Organization

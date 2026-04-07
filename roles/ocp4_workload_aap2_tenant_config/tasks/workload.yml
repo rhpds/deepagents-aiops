@@ -5,15 +5,46 @@
 # ===================================================================
 
 # -------------------------------------------------------------------
+# 0. Read AAP admin credentials from cluster secret
+# -------------------------------------------------------------------
+- name: Get AAP admin credentials secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ ocp4_workload_aap2_tenant_config_admin_credentials_secret }}"
+    namespace: "{{ ocp4_workload_aap2_tenant_config_admin_credentials_namespace }}"
+  register: r_aap_admin_secret
+
+- name: Assert AAP admin credentials secret exists
+  ansible.builtin.assert:
+    that:
+      - r_aap_admin_secret.resources | length > 0
+    fail_msg: >-
+      AAP admin credentials secret '{{ ocp4_workload_aap2_tenant_config_admin_credentials_secret }}'
+      not found in namespace '{{ ocp4_workload_aap2_tenant_config_admin_credentials_namespace }}'.
+      Deploy ocp4_workload_ansible_automation_platform with
+      ocp4_workload_ansible_automation_platform_save_admin_credentials: true.
+
+- name: Extract AAP admin credentials from secret
+  ansible.builtin.set_fact:
+    _ocp4_workload_aap2_tenant_config_controller_host: >-
+      {{ r_aap_admin_secret.resources[0].data.url | b64decode }}
+    _ocp4_workload_aap2_tenant_config_controller_username: >-
+      {{ r_aap_admin_secret.resources[0].data.username | b64decode }}
+    _ocp4_workload_aap2_tenant_config_controller_password: >-
+      {{ r_aap_admin_secret.resources[0].data.password | b64decode }}
+  no_log: true
+
+# -------------------------------------------------------------------
 # 1. Organization
 # -------------------------------------------------------------------
 - name: Create AAP2 organization
   ansible.controller.organization:
     name: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 # -------------------------------------------------------------------
@@ -26,9 +57,9 @@
     email: "{{ ocp4_workload_aap2_tenant_config_user_email }}"
     organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
   no_log: true
 
@@ -38,9 +69,9 @@
     organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
     role: admin
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 # -------------------------------------------------------------------
@@ -55,9 +86,9 @@
       username: "{{ ocp4_workload_aap2_tenant_config_vm_user }}"
       password: "{{ ocp4_workload_aap2_tenant_config_vm_password }}"
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
   no_log: true
 
@@ -72,9 +103,9 @@
       password: "{{ ocp4_workload_aap2_tenant_config_ocp_password }}"
       verify_ssl: false
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
   no_log: true
 
@@ -86,9 +117,9 @@
     name: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
     organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 - name: Add RHEL VM to inventory
@@ -96,9 +127,9 @@
     name: "{{ ocp4_workload_aap2_tenant_config_vm_hostname }}"
     inventory: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 # -------------------------------------------------------------------
@@ -114,9 +145,9 @@
     scm_update_on_launch: true
     wait: true
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 # -------------------------------------------------------------------
@@ -132,9 +163,9 @@
     credentials:
       - "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
     state: present
-    controller_host: "{{ ocp4_workload_aap2_tenant_config_controller_host }}"
-    controller_username: "{{ ocp4_workload_aap2_tenant_config_controller_username }}"
-    controller_password: "{{ ocp4_workload_aap2_tenant_config_controller_password }}"
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 # -------------------------------------------------------------------
