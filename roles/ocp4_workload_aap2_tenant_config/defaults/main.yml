@@ -6,8 +6,8 @@
 # ===================================================================
 
 # AAP2 Controller connection
-ocp4_workload_aap2_tenant_config_controller_host: "{{ aap_controller_web_url }}"
-ocp4_workload_aap2_tenant_config_controller_password: "{{ aap_controller_admin_password }}"
+ocp4_workload_aap2_tenant_config_controller_host: "https://aap-aap.{{ openshift_cluster_ingress_domain }}"
+ocp4_workload_aap2_tenant_config_controller_password: ""
 ocp4_workload_aap2_tenant_config_controller_username: admin
 ocp4_workload_aap2_tenant_config_validate_certs: false
 
