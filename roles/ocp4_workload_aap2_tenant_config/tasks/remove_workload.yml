@@ -80,20 +80,48 @@
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
-    - name: Remove user
-      ansible.platform.user:
-        username: "{{ ocp4_workload_aap2_tenant_config_username }}"
-        state: absent
-        aap_hostname: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
-        aap_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
-        aap_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
-        aap_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    - name: Look up user ID for deletion
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}/api/gateway/v1/users/?username={{ ocp4_workload_aap2_tenant_config_username | urlencode }}"
+        method: GET
+        user: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      register: r_gateway_user
 
-    - name: Remove organization
-      ansible.platform.organization:
-        name: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-        state: absent
-        aap_hostname: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
-        aap_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
-        aap_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
-        aap_validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+    - name: Remove user via Gateway API
+      when: r_gateway_user.json.count | default(0) > 0
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}/api/gateway/v1/users/{{ r_gateway_user.json.results[0].id }}/"
+        method: DELETE
+        user: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+        status_code:
+          - 204
+          - 404
+
+    - name: Look up organization ID for deletion
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}/api/gateway/v1/organizations/?name={{ ocp4_workload_aap2_tenant_config_org_name | urlencode }}"
+        method: GET
+        user: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      register: r_gateway_org
+
+    - name: Remove organization via Gateway API
+      when: r_gateway_org.json.count | default(0) > 0
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}/api/gateway/v1/organizations/{{ r_gateway_org.json.results[0].id }}/"
+        method: DELETE
+        user: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+        status_code:
+          - 204
+          - 404
