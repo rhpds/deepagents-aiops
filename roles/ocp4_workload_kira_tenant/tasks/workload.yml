@@ -120,10 +120,23 @@
 # -------------------------------------------------------------------
 # 7. Run database migration
 # -------------------------------------------------------------------
+- name: Get Kira API pod name
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=api"
+      - "app.kubernetes.io/instance=kira"
+    field_selectors:
+      - "status.phase=Running"
+  register: r_kira_api_pod
+
 - name: Run Kira database migration
+  when: r_kira_api_pod.resources | length > 0
   kubernetes.core.k8s_exec:
     namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
-    pod: "{{ r_kira_api.resources[0].spec.template.metadata.labels | dict2items | map(attribute='key') | first }}"
+    pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
     command: uv run alembic upgrade head
   register: r_migration
   retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
