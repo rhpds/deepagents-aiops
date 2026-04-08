@@ -35,12 +35,18 @@
     force: true
 
 # -------------------------------------------------------------------
-# 2. Remove namespace template (namespace already exists)
+# 2. Patch Helm chart for OpenShift compatibility
 # -------------------------------------------------------------------
 - name: Remove Helm namespace template to avoid conflict with existing namespace
   ansible.builtin.file:
     path: "/tmp/kira-helm/{{ ocp4_workload_kira_tenant_helm_chart_path }}/templates/namespace.yaml"
     state: absent
+
+- name: Patch postgres template to set PGDATA subdirectory
+  ansible.builtin.lineinfile:
+    path: "/tmp/kira-helm/{{ ocp4_workload_kira_tenant_helm_chart_path }}/templates/postgres.yaml"
+    insertafter: "key: POSTGRES_PASSWORD"
+    line: "            - name: PGDATA\n              value: /var/lib/postgresql/data/pgdata"
 
 # -------------------------------------------------------------------
 # 3. Generate Helm values
