@@ -165,7 +165,57 @@
   ignore_errors: true
 
 # -------------------------------------------------------------------
-# 8. Get Kira route URL
+# 8. Create per-tenant Kira user via API
+# -------------------------------------------------------------------
+- name: Get Kira frontend route for API access
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=frontend"
+  register: r_kira_route
+
+- name: Set Kira URL fact
+  when: r_kira_route.resources | length > 0
+  ansible.builtin.set_fact:
+    _ocp4_workload_kira_tenant_url: "https://{{ r_kira_route.resources[0].spec.host }}"
+
+- name: Get Kira API service URL
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: api
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+  register: r_kira_api_svc
+
+- name: Create per-tenant Kira user via API
+  when: r_kira_api_pod.resources | length > 0
+  ansible.builtin.uri:
+    url: "http://api.{{ ocp4_workload_kira_tenant_namespace }}.svc.cluster.local:8000/api/v1/auth/register"
+    method: POST
+    headers:
+      X-API-Key: "{{ ocp4_workload_kira_tenant_api_key }}"
+      Content-Type: application/json
+    body_format: json
+    body:
+      username: "{{ ocp4_workload_kira_tenant_user_username }}"
+      password: "{{ ocp4_workload_kira_tenant_user_password }}"
+      display_name: "{{ ocp4_workload_kira_tenant_user_display_name }}"
+      role: "{{ ocp4_workload_kira_tenant_user_role }}"
+    status_code:
+      - 200
+      - 201
+      - 409
+    validate_certs: false
+  register: r_kira_user
+  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
+  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
+  until: r_kira_user is succeeded
+  ignore_errors: true
+
+# -------------------------------------------------------------------
+# 9. Save user info
 # -------------------------------------------------------------------
 - name: Get Kira frontend route
   kubernetes.core.k8s_info:
@@ -189,8 +239,10 @@
     data:
       kira_url: "{{ _ocp4_workload_kira_tenant_url | default('') }}"
       kira_api_key: "{{ ocp4_workload_kira_tenant_api_key }}"
-      kira_username: "{{ ocp4_workload_kira_tenant_login_username }}"
-      kira_password: "{{ ocp4_workload_kira_tenant_login_password }}"
+      kira_admin_username: "{{ ocp4_workload_kira_tenant_admin_username }}"
+      kira_admin_password: "{{ ocp4_workload_kira_tenant_admin_password }}"
+      kira_user_name: "{{ ocp4_workload_kira_tenant_user_username }}"
+      kira_user_password: "{{ ocp4_workload_kira_tenant_user_password }}"
 
 # -------------------------------------------------------------------
 # 10. Cleanup temp files
