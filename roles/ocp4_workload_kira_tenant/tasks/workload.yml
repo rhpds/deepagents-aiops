@@ -132,6 +132,14 @@
       - "status.phase=Running"
   register: r_kira_api_pod
 
+- name: Fix alembic.ini to use postgres service URL
+  when: r_kira_api_pod.resources | length > 0
+  kubernetes.core.k8s_exec:
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+    command: >-
+      sed -i 's|localhost:5432|postgres:5432|g' /app/alembic.ini
+
 - name: Run Kira database migration
   when: r_kira_api_pod.resources | length > 0
   kubernetes.core.k8s_exec:
