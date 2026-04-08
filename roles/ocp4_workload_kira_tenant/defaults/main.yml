@@ -28,6 +28,10 @@ ocp4_workload_kira_tenant_postgres_storage: 1Gi
 ocp4_workload_kira_tenant_api_key: "{{ common_password | default('dev-api-key') }}"
 ocp4_workload_kira_tenant_secret_key: "{{ common_password | default('dev-secret-key') }}"
 ocp4_workload_kira_tenant_artifact_storage: 1Gi
+# Kira login credentials (from seed data)
+ocp4_workload_kira_tenant_login_username: admin
+ocp4_workload_kira_tenant_login_password: admin123
+
 ocp4_workload_kira_tenant_allow_iframe: true
 ocp4_workload_kira_tenant_cors_origins: "*"
 

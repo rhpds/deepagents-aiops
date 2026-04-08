@@ -144,6 +144,18 @@
   until: r_migration is succeeded
   ignore_errors: true
 
+- name: Seed Kira database with default users
+  when: r_kira_api_pod.resources | length > 0
+  kubernetes.core.k8s_exec:
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+    command: uv run python -m api.seed
+  register: r_seed
+  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
+  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
+  until: r_seed is succeeded
+  ignore_errors: true
+
 # -------------------------------------------------------------------
 # 8. Get Kira route URL
 # -------------------------------------------------------------------
@@ -169,6 +181,8 @@
     data:
       kira_url: "{{ _ocp4_workload_kira_tenant_url | default('') }}"
       kira_api_key: "{{ ocp4_workload_kira_tenant_api_key }}"
+      kira_username: "{{ ocp4_workload_kira_tenant_login_username }}"
+      kira_password: "{{ ocp4_workload_kira_tenant_login_password }}"
 
 # -------------------------------------------------------------------
 # 10. Cleanup temp files
