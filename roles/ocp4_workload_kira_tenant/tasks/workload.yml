@@ -4,6 +4,27 @@
 # ===================================================================
 
 # -------------------------------------------------------------------
+# 0. Grant anyuid SCC to default service account
+# -------------------------------------------------------------------
+- name: Grant anyuid SCC for Kira pods
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: kira-anyuid
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:openshift:scc:anyuid
+      subjects:
+        - kind: ServiceAccount
+          name: default
+          namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+
+# -------------------------------------------------------------------
 # 1. Clone Kira repo for Helm chart
 # -------------------------------------------------------------------
 - name: Clone Kira repository

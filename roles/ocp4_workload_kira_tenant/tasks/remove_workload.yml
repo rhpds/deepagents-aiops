@@ -9,3 +9,11 @@
     release_namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
     state: absent
     wait: true
+
+- name: Remove anyuid SCC rolebinding
+  kubernetes.core.k8s:
+    state: absent
+    api_version: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    name: kira-anyuid
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
