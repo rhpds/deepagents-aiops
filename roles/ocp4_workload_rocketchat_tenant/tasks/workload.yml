@@ -126,7 +126,7 @@
 - name: Set Rocket.Chat URL facts
   ansible.builtin.set_fact:
     _rocketchat_url: "https://{{ r_rocketchat_route.resources[0].spec.host }}"
-    _rocketchat_api_url: "http://{{ ocp4_workload_rocketchat_tenant_release_name }}-rocketchat.{{ ocp4_workload_rocketchat_tenant_namespace }}.svc.cluster.local:3000"
+    _rocketchat_api_url: "https://{{ r_rocketchat_route.resources[0].spec.host }}"
 
 # -------------------------------------------------------------------
 # 6. Setup admin account (first login creates admin)
