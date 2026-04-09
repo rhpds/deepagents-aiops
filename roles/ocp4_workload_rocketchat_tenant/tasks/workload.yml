@@ -6,19 +6,19 @@
 # -------------------------------------------------------------------
 # 0. Grant anyuid SCC for Rocket.Chat and MongoDB service accounts
 # -------------------------------------------------------------------
-- name: Grant anyuid SCC for Rocket.Chat pods
+- name: Grant privileged SCC for Rocket.Chat and MongoDB pods
   kubernetes.core.k8s:
     state: present
     definition:
       apiVersion: rbac.authorization.k8s.io/v1
       kind: RoleBinding
       metadata:
-        name: rocketchat-anyuid
+        name: rocketchat-privileged
         namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
       roleRef:
         apiGroup: rbac.authorization.k8s.io
         kind: ClusterRole
-        name: system:openshift:scc:anyuid
+        name: system:openshift:scc:privileged
       subjects:
         - kind: ServiceAccount
           name: default

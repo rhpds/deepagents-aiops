@@ -23,5 +23,5 @@
     state: absent
     api_version: rbac.authorization.k8s.io/v1
     kind: RoleBinding
-    name: rocketchat-anyuid
+    name: rocketchat-privileged
     namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
