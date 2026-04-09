@@ -1,0 +1,44 @@
+---
+# ===================================================================
+# Role: ocp4_workload_rocketchat_tenant
+# Deploys a per-tenant Rocket.Chat instance via Helm.
+# ===================================================================
+
+# Target namespace (existing tenant namespace)
+ocp4_workload_rocketchat_tenant_namespace: "{{ ocp4_workload_username }}-agentic"
+
+# Helm chart
+ocp4_workload_rocketchat_tenant_helm_repo_name: rocketchat
+ocp4_workload_rocketchat_tenant_helm_repo_url: https://rocketchat.github.io/helm-charts
+ocp4_workload_rocketchat_tenant_helm_chart: rocketchat
+ocp4_workload_rocketchat_tenant_release_name: rocketchat
+
+# Container image
+ocp4_workload_rocketchat_tenant_image: registry.connect.redhat.com/rocketchat/rocketchat
+ocp4_workload_rocketchat_tenant_image_tag: latest
+
+# Admin credentials
+ocp4_workload_rocketchat_tenant_admin_username: admin
+ocp4_workload_rocketchat_tenant_admin_password: "{{ common_password | default('admin') }}"
+ocp4_workload_rocketchat_tenant_admin_email: admin@example.com
+
+# Per-tenant user
+ocp4_workload_rocketchat_tenant_user_username: "{{ ocp4_workload_username | default('user') }}-agentic"
+ocp4_workload_rocketchat_tenant_user_password: "{{ common_password | default('password') }}"
+ocp4_workload_rocketchat_tenant_user_email: "{{ ocp4_workload_username | default('user') }}@example.com"
+
+# Channel setup
+ocp4_workload_rocketchat_tenant_channel_name: support
+
+# MongoDB
+ocp4_workload_rocketchat_tenant_mongodb_password: "{{ common_password | default('mongodb') }}"
+ocp4_workload_rocketchat_tenant_mongodb_storage: 2Gi
+
+# Route
+ocp4_workload_rocketchat_tenant_route_name: rocketchat
+
+# Retry configuration
+ocp4_workload_rocketchat_tenant_deploy_retries: 60
+ocp4_workload_rocketchat_tenant_deploy_retry_delay: 10
+ocp4_workload_rocketchat_tenant_api_retries: 10
+ocp4_workload_rocketchat_tenant_api_retry_delay: 5

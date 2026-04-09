@@ -1,0 +1,19 @@
+---
+# ===================================================================
+# Remove Rocket.Chat
+# ===================================================================
+
+- name: Remove Rocket.Chat Helm release
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_rocketchat_tenant_release_name }}"
+    release_namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+    state: absent
+    wait: true
+
+- name: Remove Rocket.Chat route
+  kubernetes.core.k8s:
+    state: absent
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: "{{ ocp4_workload_rocketchat_tenant_route_name }}"
+    namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"

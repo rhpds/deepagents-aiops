@@ -1,0 +1,225 @@
+---
+# ===================================================================
+# Deploy Rocket.Chat per tenant via Helm
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1. Add Helm repo
+# -------------------------------------------------------------------
+- name: Add Rocket.Chat Helm repo
+  kubernetes.core.helm_repository:
+    name: "{{ ocp4_workload_rocketchat_tenant_helm_repo_name }}"
+    repo_url: "{{ ocp4_workload_rocketchat_tenant_helm_repo_url }}"
+
+# -------------------------------------------------------------------
+# 2. Deploy via Helm
+# -------------------------------------------------------------------
+- name: Deploy Rocket.Chat via Helm
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_rocketchat_tenant_release_name }}"
+    chart_ref: "{{ ocp4_workload_rocketchat_tenant_helm_repo_name }}/{{ ocp4_workload_rocketchat_tenant_helm_chart }}"
+    release_namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+    values:
+      image:
+        repository: "{{ ocp4_workload_rocketchat_tenant_image }}"
+        tag: "{{ ocp4_workload_rocketchat_tenant_image_tag }}"
+      persistence:
+        enabled: false
+      mongodb:
+        auth:
+          passwords:
+            - "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
+          usernames:
+            - rocketchat
+          databases:
+            - rocketchat
+          rootPassword: "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
+        persistence:
+          enabled: true
+          size: "{{ ocp4_workload_rocketchat_tenant_mongodb_storage }}"
+      host: "{{ ocp4_workload_rocketchat_tenant_route_name }}-{{ ocp4_workload_rocketchat_tenant_namespace }}"
+    state: present
+    wait: false
+
+# -------------------------------------------------------------------
+# 3. Create OpenShift Route
+# -------------------------------------------------------------------
+- name: Create Rocket.Chat route
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: route.openshift.io/v1
+      kind: Route
+      metadata:
+        name: "{{ ocp4_workload_rocketchat_tenant_route_name }}"
+        namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+      spec:
+        to:
+          kind: Service
+          name: "{{ ocp4_workload_rocketchat_tenant_release_name }}-rocketchat"
+          weight: 100
+        port:
+          targetPort: http
+        tls:
+          termination: edge
+          insecureEdgeTerminationPolicy: Redirect
+
+# -------------------------------------------------------------------
+# 4. Wait for Rocket.Chat to be ready
+# -------------------------------------------------------------------
+- name: Wait for Rocket.Chat deployment to be available
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_rocketchat_tenant_release_name }}-rocketchat"
+    namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+  register: r_rocketchat_deploy
+  retries: "{{ ocp4_workload_rocketchat_tenant_deploy_retries }}"
+  delay: "{{ ocp4_workload_rocketchat_tenant_deploy_retry_delay }}"
+  until:
+    - r_rocketchat_deploy.resources | length > 0
+    - r_rocketchat_deploy.resources[0].status.readyReplicas is defined
+    - r_rocketchat_deploy.resources[0].status.readyReplicas >= 1
+
+# -------------------------------------------------------------------
+# 5. Get route URL
+# -------------------------------------------------------------------
+- name: Get Rocket.Chat route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: "{{ ocp4_workload_rocketchat_tenant_route_name }}"
+    namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+  register: r_rocketchat_route
+
+- name: Set Rocket.Chat URL facts
+  ansible.builtin.set_fact:
+    _rocketchat_url: "https://{{ r_rocketchat_route.resources[0].spec.host }}"
+    _rocketchat_api_url: "http://{{ ocp4_workload_rocketchat_tenant_release_name }}-rocketchat.{{ ocp4_workload_rocketchat_tenant_namespace }}.svc.cluster.local:3000"
+
+# -------------------------------------------------------------------
+# 6. Setup admin account (first login creates admin)
+# -------------------------------------------------------------------
+- name: Register admin user via Rocket.Chat setup API
+  ansible.builtin.uri:
+    url: "{{ _rocketchat_api_url }}/api/v1/users.register"
+    method: POST
+    body_format: json
+    body:
+      username: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
+      email: "{{ ocp4_workload_rocketchat_tenant_admin_email }}"
+      pass: "{{ ocp4_workload_rocketchat_tenant_admin_password }}"
+      name: Administrator
+    status_code:
+      - 200
+      - 400
+    validate_certs: false
+  register: r_admin_register
+  retries: "{{ ocp4_workload_rocketchat_tenant_api_retries }}"
+  delay: "{{ ocp4_workload_rocketchat_tenant_api_retry_delay }}"
+  until: r_admin_register is succeeded
+  ignore_errors: true
+
+- name: Login as admin
+  ansible.builtin.uri:
+    url: "{{ _rocketchat_api_url }}/api/v1/login"
+    method: POST
+    body_format: json
+    body:
+      user: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
+      password: "{{ ocp4_workload_rocketchat_tenant_admin_password }}"
+    status_code: 200
+    validate_certs: false
+  register: r_admin_login
+  retries: "{{ ocp4_workload_rocketchat_tenant_api_retries }}"
+  delay: "{{ ocp4_workload_rocketchat_tenant_api_retry_delay }}"
+  until: r_admin_login is succeeded
+  no_log: true
+
+- name: Set admin auth facts
+  ansible.builtin.set_fact:
+    _rocketchat_admin_auth_token: "{{ r_admin_login.json.data.authToken }}"
+    _rocketchat_admin_user_id: "{{ r_admin_login.json.data.userId }}"
+  no_log: true
+
+# -------------------------------------------------------------------
+# 7. Create tenant user
+# -------------------------------------------------------------------
+- name: Create tenant user
+  ansible.builtin.uri:
+    url: "{{ _rocketchat_api_url }}/api/v1/users.create"
+    method: POST
+    headers:
+      X-Auth-Token: "{{ _rocketchat_admin_auth_token }}"
+      X-User-Id: "{{ _rocketchat_admin_user_id }}"
+    body_format: json
+    body:
+      username: "{{ ocp4_workload_rocketchat_tenant_user_username }}"
+      email: "{{ ocp4_workload_rocketchat_tenant_user_email }}"
+      password: "{{ ocp4_workload_rocketchat_tenant_user_password }}"
+      name: "{{ ocp4_workload_rocketchat_tenant_user_username }}"
+      roles:
+        - user
+      verified: true
+    status_code:
+      - 200
+      - 400
+    validate_certs: false
+  register: r_tenant_user
+  changed_when: r_tenant_user.status == 200
+  no_log: true
+
+# -------------------------------------------------------------------
+# 8. Create support channel
+# -------------------------------------------------------------------
+- name: Create support channel
+  ansible.builtin.uri:
+    url: "{{ _rocketchat_api_url }}/api/v1/channels.create"
+    method: POST
+    headers:
+      X-Auth-Token: "{{ _rocketchat_admin_auth_token }}"
+      X-User-Id: "{{ _rocketchat_admin_user_id }}"
+    body_format: json
+    body:
+      name: "{{ ocp4_workload_rocketchat_tenant_channel_name }}"
+      members:
+        - "{{ ocp4_workload_rocketchat_tenant_user_username }}"
+    status_code:
+      - 200
+      - 400
+    validate_certs: false
+  register: r_support_channel
+  changed_when: r_support_channel.status == 200
+
+# -------------------------------------------------------------------
+# 9. Create API token for Deep Agent
+# -------------------------------------------------------------------
+- name: Create API token for Deep Agent
+  ansible.builtin.uri:
+    url: "{{ _rocketchat_api_url }}/api/v1/users.createToken"
+    method: POST
+    headers:
+      X-Auth-Token: "{{ _rocketchat_admin_auth_token }}"
+      X-User-Id: "{{ _rocketchat_admin_user_id }}"
+    body_format: json
+    body:
+      username: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
+    status_code: 200
+    validate_certs: false
+  register: r_api_token
+  no_log: true
+
+# -------------------------------------------------------------------
+# 10. Save user info
+# -------------------------------------------------------------------
+- name: Save Rocket.Chat connection info to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      rocketchat_url: "{{ _rocketchat_url }}"
+      rocketchat_username: "{{ ocp4_workload_rocketchat_tenant_user_username }}"
+      rocketchat_password: "{{ ocp4_workload_rocketchat_tenant_user_password }}"
+      rocketchat_admin_username: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
+      rocketchat_admin_password: "{{ ocp4_workload_rocketchat_tenant_admin_password }}"
+      rocketchat_api_user_id: "{{ r_api_token.json.data.userId }}"
+      rocketchat_api_auth_token: "{{ r_api_token.json.data.authToken }}"
+      rocketchat_channel: "{{ ocp4_workload_rocketchat_tenant_channel_name }}"
