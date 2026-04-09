@@ -14,7 +14,7 @@ ocp4_workload_rocketchat_tenant_helm_chart: rocketchat
 ocp4_workload_rocketchat_tenant_release_name: rocketchat
 
 # Container image
-ocp4_workload_rocketchat_tenant_image: registry.connect.redhat.com/rocketchat/rocketchat
+ocp4_workload_rocketchat_tenant_image: rocketchat/rocket.chat
 ocp4_workload_rocketchat_tenant_image_tag: 7.8.0
 
 # Admin credentials

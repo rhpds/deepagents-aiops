@@ -67,6 +67,7 @@
         persistence:
           enabled: true
           size: "{{ ocp4_workload_rocketchat_tenant_mongodb_storage }}"
+          storageClass: ocs-external-storagecluster-ceph-rbd-immediate
       host: "{{ ocp4_workload_rocketchat_tenant_route_name }}-{{ ocp4_workload_rocketchat_tenant_namespace }}"
     state: present
     wait: false
