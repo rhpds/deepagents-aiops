@@ -17,3 +17,11 @@
     kind: Route
     name: "{{ ocp4_workload_rocketchat_tenant_route_name }}"
     namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+
+- name: Remove anyuid SCC rolebinding
+  kubernetes.core.k8s:
+    state: absent
+    api_version: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    name: rocketchat-anyuid
+    namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"

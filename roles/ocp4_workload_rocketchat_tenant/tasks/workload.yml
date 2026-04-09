@@ -4,6 +4,33 @@
 # ===================================================================
 
 # -------------------------------------------------------------------
+# 0. Grant anyuid SCC for Rocket.Chat and MongoDB service accounts
+# -------------------------------------------------------------------
+- name: Grant anyuid SCC for Rocket.Chat pods
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: rocketchat-anyuid
+        namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:openshift:scc:anyuid
+      subjects:
+        - kind: ServiceAccount
+          name: default
+          namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+        - kind: ServiceAccount
+          name: rocketchat-mongodb
+          namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+        - kind: ServiceAccount
+          name: rocketchat-rocketchat
+          namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
+
+# -------------------------------------------------------------------
 # 1. Add Helm repo
 # -------------------------------------------------------------------
 - name: Add Rocket.Chat Helm repo
