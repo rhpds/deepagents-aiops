@@ -220,25 +220,7 @@
   changed_when: r_support_channel.status == 200
 
 # -------------------------------------------------------------------
-# 9. Create API token for Deep Agent
-# -------------------------------------------------------------------
-- name: Create API token for Deep Agent
-  ansible.builtin.uri:
-    url: "{{ _rocketchat_api_url }}/api/v1/users.createToken"
-    method: POST
-    headers:
-      X-Auth-Token: "{{ _rocketchat_admin_auth_token }}"
-      X-User-Id: "{{ _rocketchat_admin_user_id }}"
-    body_format: json
-    body:
-      username: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
-    status_code: 200
-    validate_certs: false
-  register: r_api_token
-  no_log: true
-
-# -------------------------------------------------------------------
-# 10. Save user info
+# 9. Save user info (use admin auth token from login for API access)
 # -------------------------------------------------------------------
 - name: Save Rocket.Chat connection info to agnosticd_user_info
   agnosticd.core.agnosticd_user_info:
@@ -248,6 +230,6 @@
       rocketchat_password: "{{ ocp4_workload_rocketchat_tenant_user_password }}"
       rocketchat_admin_username: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
       rocketchat_admin_password: "{{ ocp4_workload_rocketchat_tenant_admin_password }}"
-      rocketchat_api_user_id: "{{ r_api_token.json.data.userId }}"
-      rocketchat_api_auth_token: "{{ r_api_token.json.data.authToken }}"
+      rocketchat_api_user_id: "{{ _rocketchat_admin_user_id }}"
+      rocketchat_api_auth_token: "{{ _rocketchat_admin_auth_token }}"
       rocketchat_channel: "{{ ocp4_workload_rocketchat_tenant_channel_name }}"
