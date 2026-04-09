@@ -23,9 +23,12 @@
       image:
         repository: "{{ ocp4_workload_rocketchat_tenant_image }}"
         tag: "{{ ocp4_workload_rocketchat_tenant_image_tag }}"
+      microservices:
+        enabled: false
       persistence:
         enabled: false
       mongodb:
+        enabled: true
         auth:
           passwords:
             - "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
