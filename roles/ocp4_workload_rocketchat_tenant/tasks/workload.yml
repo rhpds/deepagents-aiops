@@ -54,6 +54,23 @@
         enabled: false
       persistence:
         enabled: false
+      extraEnv:
+        - name: OVERWRITE_SETTING_Show_Setup_Wizard
+          value: completed
+        - name: ADMIN_USERNAME
+          value: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
+        - name: ADMIN_PASS
+          value: "{{ ocp4_workload_rocketchat_tenant_admin_password }}"
+        - name: ADMIN_EMAIL
+          value: "{{ ocp4_workload_rocketchat_tenant_admin_email }}"
+        - name: OVERWRITE_SETTING_Iframe_Integration_send_enable
+          value: "true"
+        - name: OVERWRITE_SETTING_Iframe_Integration_receive_enable
+          value: "true"
+        - name: OVERWRITE_SETTING_Iframe_Restrict_Access
+          value: "false"
+        - name: OVERWRITE_SETTING_Accounts_RegistrationForm
+          value: Disabled
       mongodb:
         enabled: true
         auth:
@@ -129,28 +146,8 @@
     _rocketchat_api_url: "https://{{ r_rocketchat_route.resources[0].spec.host }}"
 
 # -------------------------------------------------------------------
-# 6. Setup admin account (first login creates admin)
+# 6. Login as admin (pre-configured via env vars)
 # -------------------------------------------------------------------
-- name: Register admin user via Rocket.Chat setup API
-  ansible.builtin.uri:
-    url: "{{ _rocketchat_api_url }}/api/v1/users.register"
-    method: POST
-    body_format: json
-    body:
-      username: "{{ ocp4_workload_rocketchat_tenant_admin_username }}"
-      email: "{{ ocp4_workload_rocketchat_tenant_admin_email }}"
-      pass: "{{ ocp4_workload_rocketchat_tenant_admin_password }}"
-      name: Administrator
-    status_code:
-      - 200
-      - 400
-    validate_certs: false
-  register: r_admin_register
-  retries: "{{ ocp4_workload_rocketchat_tenant_api_retries }}"
-  delay: "{{ ocp4_workload_rocketchat_tenant_api_retry_delay }}"
-  until: r_admin_register is succeeded
-  ignore_errors: true
-
 - name: Login as admin
   ansible.builtin.uri:
     url: "{{ _rocketchat_api_url }}/api/v1/login"
