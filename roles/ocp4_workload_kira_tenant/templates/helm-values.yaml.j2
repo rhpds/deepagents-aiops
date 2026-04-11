@@ -34,6 +34,14 @@ kira:
 
 artifacts:
   storage: {{ ocp4_workload_kira_tenant_artifact_storage }}
+  storageClass: ocs-external-storagecluster-cephfs
+
+ttyd:
+  enabled: {{ ocp4_workload_kira_tenant_ttyd_enabled | lower }}
+  image:
+    repository: {{ ocp4_workload_kira_tenant_ttyd_image }}
+    tag: "{{ ocp4_workload_kira_tenant_ttyd_tag }}"
+    pullPolicy: IfNotPresent
 
 route:
   enabled: true
