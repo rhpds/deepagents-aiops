@@ -38,7 +38,7 @@ ocp4_workload_kira_tenant_admin_username: admin
 ocp4_workload_kira_tenant_admin_password: admin123
 
 # Per-tenant user credentials
-ocp4_workload_kira_tenant_user_username: "{{ ocp4_workload_username | default('user-' ~ guid) }}-agentic"
+ocp4_workload_kira_tenant_user_username: "{{ ocp4_workload_username | default('user-' ~ guid) }}"
 ocp4_workload_kira_tenant_user_password: "{{ common_password | default('password') }}"
 ocp4_workload_kira_tenant_user_display_name: "{{ ocp4_workload_username | default('user-' ~ guid) }}"
 ocp4_workload_kira_tenant_user_role: operator
