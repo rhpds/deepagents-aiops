@@ -14,13 +14,13 @@ ocp4_workload_kira_tenant_namespace: "{{ ocp4_workload_username }}-agentic"
 
 # Container images
 ocp4_workload_kira_tenant_api_image: quay.io/rhpds/kira-api
-ocp4_workload_kira_tenant_api_tag: "0.4.0"
+ocp4_workload_kira_tenant_api_tag: "0.5.0"
 ocp4_workload_kira_tenant_frontend_image: quay.io/rhpds/kira-frontend
-ocp4_workload_kira_tenant_frontend_tag: "0.4.1"
+ocp4_workload_kira_tenant_frontend_tag: "0.5.0"
 
 # ttyd troubleshooting terminal
 ocp4_workload_kira_tenant_ttyd_image: quay.io/rhpds/kira-ttyd
-ocp4_workload_kira_tenant_ttyd_tag: "0.4.1"
+ocp4_workload_kira_tenant_ttyd_tag: "0.5.0"
 ocp4_workload_kira_tenant_ttyd_enabled: true
 
 # PostgreSQL
