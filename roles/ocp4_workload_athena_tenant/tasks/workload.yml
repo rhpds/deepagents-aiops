@@ -1,0 +1,365 @@
+---
+# ===================================================================
+# Deploy Athena AIOps service per tenant via Helm
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 0. Grant anyuid SCC to default service account
+# -------------------------------------------------------------------
+- name: Grant anyuid SCC for Athena pods
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: athena-anyuid
+        namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:openshift:scc:anyuid
+      subjects:
+        - kind: ServiceAccount
+          name: default
+          namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+
+# -------------------------------------------------------------------
+# 1. Read AAP2 admin credentials from cluster secret
+# -------------------------------------------------------------------
+- name: Get AAP admin credentials secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ ocp4_workload_athena_tenant_aap2_admin_secret }}"
+    namespace: "{{ ocp4_workload_athena_tenant_aap2_admin_namespace }}"
+  register: r_aap_admin_secret
+
+- name: Assert AAP admin credentials secret exists
+  ansible.builtin.assert:
+    that:
+      - r_aap_admin_secret.resources | length > 0
+    fail_msg: >-
+      AAP admin credentials secret '{{ ocp4_workload_athena_tenant_aap2_admin_secret }}'
+      not found in namespace '{{ ocp4_workload_athena_tenant_aap2_admin_namespace }}'.
+      Ensure ocp4_workload_ansible_automation_platform ran with
+      ocp4_workload_ansible_automation_platform_save_admin_credentials: true.
+
+- name: Extract AAP admin credentials from secret
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_aap2_url: >-
+      {{ r_aap_admin_secret.resources[0].data.url | b64decode }}
+    _ocp4_workload_athena_tenant_aap2_username: >-
+      {{ r_aap_admin_secret.resources[0].data.username | b64decode }}
+    _ocp4_workload_athena_tenant_aap2_password: >-
+      {{ r_aap_admin_secret.resources[0].data.password | b64decode }}
+  no_log: true
+
+# -------------------------------------------------------------------
+# 2. Discover Kira routes in tenant namespace
+# -------------------------------------------------------------------
+- name: Get Kira API route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=api"
+      - "app.kubernetes.io/instance=kira"
+  register: r_kira_api_route
+
+- name: Assert Kira API route exists
+  ansible.builtin.assert:
+    that:
+      - r_kira_api_route.resources | length > 0
+    fail_msg: >-
+      Kira API route not found in namespace '{{ ocp4_workload_athena_tenant_namespace }}'.
+      Ensure ocp4_workload_kira_tenant ran before this role.
+
+- name: Set Kira API host fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_kira_api_host: >-
+      {{ r_kira_api_route.resources[0].spec.host }}
+
+- name: Get Kira frontend route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+    label_selectors:
+      - "app.kubernetes.io/component=frontend"
+      - "app.kubernetes.io/instance=kira"
+  register: r_kira_frontend_route
+
+- name: Assert Kira frontend route exists
+  ansible.builtin.assert:
+    that:
+      - r_kira_frontend_route.resources | length > 0
+    fail_msg: >-
+      Kira frontend route not found in namespace '{{ ocp4_workload_athena_tenant_namespace }}'.
+      Ensure ocp4_workload_kira_tenant ran before this role.
+
+- name: Set Kira frontend host fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_kira_frontend_host: >-
+      {{ r_kira_frontend_route.resources[0].spec.host }}
+
+# -------------------------------------------------------------------
+# 3. Discover Rocket.Chat route in tenant namespace
+# -------------------------------------------------------------------
+- name: Get Rocket.Chat route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: rocketchat
+    namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+  register: r_rocketchat_route
+
+- name: Assert Rocket.Chat route exists
+  ansible.builtin.assert:
+    that:
+      - r_rocketchat_route.resources | length > 0
+    fail_msg: >-
+      Rocket.Chat route 'rocketchat' not found in namespace
+      '{{ ocp4_workload_athena_tenant_namespace }}'.
+      Ensure ocp4_workload_rocketchat_tenant ran before this role.
+
+- name: Set Rocket.Chat host fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_rocketchat_host: >-
+      {{ r_rocketchat_route.resources[0].spec.host }}
+
+# -------------------------------------------------------------------
+# 4. Create Rocket.Chat bot user for Athena notifications
+# -------------------------------------------------------------------
+- name: Login to Rocket.Chat as admin
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_athena_tenant_rocketchat_host }}/api/v1/login"
+    method: POST
+    body_format: json
+    body:
+      user: "{{ ocp4_workload_athena_tenant_rocketchat_admin_username }}"
+      password: "{{ ocp4_workload_athena_tenant_rocketchat_admin_password }}"
+    status_code: 200
+    validate_certs: false
+  register: r_rc_admin_login
+  retries: "{{ ocp4_workload_athena_tenant_api_retries }}"
+  delay: "{{ ocp4_workload_athena_tenant_api_retry_delay }}"
+  until: r_rc_admin_login is succeeded
+  no_log: true
+
+- name: Set RC admin auth facts
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_rc_admin_auth_token: >-
+      {{ r_rc_admin_login.json.data.authToken }}
+    _ocp4_workload_athena_tenant_rc_admin_user_id: >-
+      {{ r_rc_admin_login.json.data.userId }}
+  no_log: true
+
+- name: Create aiops bot user in Rocket.Chat
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_athena_tenant_rocketchat_host }}/api/v1/users.create"
+    method: POST
+    headers:
+      X-Auth-Token: "{{ _ocp4_workload_athena_tenant_rc_admin_auth_token }}"
+      X-User-Id: "{{ _ocp4_workload_athena_tenant_rc_admin_user_id }}"
+    body_format: json
+    body:
+      username: "{{ ocp4_workload_athena_tenant_rocketchat_bot_username }}"
+      email: "{{ ocp4_workload_athena_tenant_rocketchat_bot_username }}@example.com"
+      password: "{{ ocp4_workload_athena_tenant_rocketchat_bot_password }}"
+      name: Athena AIOps
+      roles:
+        - bot
+      verified: true
+    status_code:
+      - 200
+      - 400
+    validate_certs: false
+  register: r_rc_bot_user
+  changed_when: r_rc_bot_user.status == 200
+  no_log: true
+
+# -------------------------------------------------------------------
+# 5. Login as bot user to get auth token for Athena
+# -------------------------------------------------------------------
+- name: Login to Rocket.Chat as aiops bot
+  ansible.builtin.uri:
+    url: "https://{{ _ocp4_workload_athena_tenant_rocketchat_host }}/api/v1/login"
+    method: POST
+    body_format: json
+    body:
+      user: "{{ ocp4_workload_athena_tenant_rocketchat_bot_username }}"
+      password: "{{ ocp4_workload_athena_tenant_rocketchat_bot_password }}"
+    status_code: 200
+    validate_certs: false
+  register: r_rc_bot_login
+  retries: "{{ ocp4_workload_athena_tenant_api_retries }}"
+  delay: "{{ ocp4_workload_athena_tenant_api_retry_delay }}"
+  until: r_rc_bot_login is succeeded
+  no_log: true
+
+- name: Set bot auth facts for Helm values
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_rocketchat_auth_token: >-
+      {{ r_rc_bot_login.json.data.authToken }}
+    _ocp4_workload_athena_tenant_rocketchat_user_id: >-
+      {{ r_rc_bot_login.json.data.userId }}
+  no_log: true
+
+# -------------------------------------------------------------------
+# 6. Clone Athena repo for Helm chart
+# -------------------------------------------------------------------
+- name: Clone Athena repository
+  ansible.builtin.git:
+    repo: "{{ ocp4_workload_athena_tenant_helm_repo }}"
+    dest: /tmp/athena-helm
+    version: "{{ ocp4_workload_athena_tenant_helm_repo_ref }}"
+    force: true
+
+# -------------------------------------------------------------------
+# 7. Generate Helm values and deploy
+# -------------------------------------------------------------------
+- name: Template Helm values file
+  ansible.builtin.template:
+    src: helm-values.yaml.j2
+    dest: /tmp/athena-helm-values.yaml
+    mode: "0644"
+
+- name: Deploy Athena via Helm
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_athena_tenant_release_name }}"
+    chart_ref: "/tmp/athena-helm/{{ ocp4_workload_athena_tenant_helm_chart_path }}"
+    release_namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+    values_files:
+      - /tmp/athena-helm-values.yaml
+    state: present
+    wait: false
+
+# -------------------------------------------------------------------
+# 8. Wait for Athena to be ready
+# -------------------------------------------------------------------
+- name: Wait for Athena deployment to be available
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_athena_tenant_release_name }}"
+    namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+  register: r_athena_deploy
+  retries: "{{ ocp4_workload_athena_tenant_deploy_retries }}"
+  delay: "{{ ocp4_workload_athena_tenant_deploy_retry_delay }}"
+  until:
+    - r_athena_deploy.resources | length > 0
+    - r_athena_deploy.resources[0].status.readyReplicas is defined
+    - r_athena_deploy.resources[0].status.readyReplicas >= 1
+
+# -------------------------------------------------------------------
+# 9. Get Athena route URL for webhook registration
+# -------------------------------------------------------------------
+- name: Get Athena route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: "{{ ocp4_workload_athena_tenant_release_name }}"
+    namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
+  register: r_athena_route
+
+- name: Set Athena URL fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_url: >-
+      https://{{ r_athena_route.resources[0].spec.host }}
+
+# -------------------------------------------------------------------
+# 10. Register AAP2 webhook notification template
+# -------------------------------------------------------------------
+- name: Create or update AAP2 webhook notification template
+  ansible.controller.notification_template:
+    name: athena-webhook
+    description: "Athena AIOps failure notification webhook"
+    organization: "{{ ocp4_workload_athena_tenant_aap2_organization }}"
+    notification_type: webhook
+    notification_configuration:
+      url: "{{ _ocp4_workload_athena_tenant_url }}/api/v1/webhook/aap2"
+      http_method: POST
+      headers:
+        Content-Type: application/json
+    state: present
+    controller_host: "{{ _ocp4_workload_athena_tenant_aap2_url }}"
+    controller_username: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+    controller_password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+    validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+
+- name: Get all job templates in tenant org
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/"
+    method: GET
+    user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+    password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+    status_code: 200
+  register: r_job_templates
+  no_log: true
+
+- name: Get notification template ID
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/notification_templates/"
+    method: GET
+    user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+    password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+    body_format: json
+    status_code: 200
+  register: r_notification_templates
+  no_log: true
+
+- name: Set notification template ID fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_athena_tenant_notification_template_id: >-
+      {{ r_notification_templates.json.results
+         | selectattr('name', 'equalto', 'athena-webhook')
+         | map(attribute='id') | first }}
+
+- name: Attach webhook to job templates as failure notification
+  ansible.builtin.uri:
+    url: >-
+      {{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/{{ jt_item.id }}/notification_templates_error/
+    method: POST
+    user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+    password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+    body_format: json
+    body:
+      id: "{{ _ocp4_workload_athena_tenant_notification_template_id }}"
+    status_code:
+      - 200
+      - 204
+  loop: "{{ r_job_templates.json.results }}"
+  loop_control:
+    loop_var: jt_item
+    label: "{{ jt_item.name }}"
+  no_log: true
+
+# -------------------------------------------------------------------
+# 11. Save connection info
+# -------------------------------------------------------------------
+- name: Save Athena connection info to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      athena_url: "{{ _ocp4_workload_athena_tenant_url }}"
+      athena_webhook_url: "{{ _ocp4_workload_athena_tenant_url }}/api/v1/webhook/aap2"
+
+# -------------------------------------------------------------------
+# 12. Cleanup temp files
+# -------------------------------------------------------------------
+- name: Clean up Athena temp files
+  ansible.builtin.file:
+    path: "{{ cleanup_item }}"
+    state: absent
+  loop:
+    - /tmp/athena-helm
+    - /tmp/athena-helm-values.yaml
+  loop_control:
+    loop_var: cleanup_item
