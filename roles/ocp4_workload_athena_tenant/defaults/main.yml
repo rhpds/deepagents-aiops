@@ -1,0 +1,53 @@
+---
+# ===================================================================
+# Role: ocp4_workload_athena_tenant
+# Deploys Athena AIOps service per tenant via Helm.
+# ===================================================================
+
+# Container image
+ocp4_workload_athena_tenant_image: quay.io/tonykay/athena-aiops
+ocp4_workload_athena_tenant_tag: latest
+
+# Helm chart source
+ocp4_workload_athena_tenant_helm_repo: https://github.com/tonykay/athena-aiops-deep-agent.git
+ocp4_workload_athena_tenant_helm_repo_ref: main
+ocp4_workload_athena_tenant_helm_chart_path: deploy/helm/athena
+
+# Target namespace
+ocp4_workload_athena_tenant_namespace: "user-{{ guid }}-agentic"
+
+# Helm release name
+ocp4_workload_athena_tenant_release_name: athena
+
+# AAP2 admin credentials (read from cluster secret for webhook registration)
+ocp4_workload_athena_tenant_aap2_admin_secret: aap-admin-credentials
+ocp4_workload_athena_tenant_aap2_admin_namespace: aap
+ocp4_workload_athena_tenant_aap2_organization: "org-{{ guid }}"
+ocp4_workload_athena_tenant_aap2_validate_certs: false
+
+# Kira API key (must match the key used by ocp4_workload_kira_tenant)
+ocp4_workload_athena_tenant_kira_api_key: "{{ common_password | default('dev-api-key') }}"
+
+# Rocket.Chat admin credentials (must match ocp4_workload_rocketchat_tenant)
+ocp4_workload_athena_tenant_rocketchat_admin_username: admin
+ocp4_workload_athena_tenant_rocketchat_admin_password: "{{ common_password | default('admin') }}"
+
+# Rocket.Chat bot user for Athena notifications
+ocp4_workload_athena_tenant_rocketchat_bot_username: aiops
+ocp4_workload_athena_tenant_rocketchat_bot_password: "{{ common_password | default('aiops') }}"
+ocp4_workload_athena_tenant_rocketchat_channel: support
+
+# MaaS / LLM gateway
+ocp4_workload_athena_tenant_maas_api_base: "{{ litellm_api_endpoint | default('') }}"
+ocp4_workload_athena_tenant_maas_api_key: "{{ litellm_virtual_key | default('') }}"
+
+# Agent model configuration
+ocp4_workload_athena_tenant_ops_manager_model: "openai/claude-sonnet-4-6"
+ocp4_workload_athena_tenant_specialist_model: "openai/claude-sonnet-4-6"
+ocp4_workload_athena_tenant_reviewer_model: "openai/claude-3-5-haiku"
+
+# Retry configuration
+ocp4_workload_athena_tenant_deploy_retries: 60
+ocp4_workload_athena_tenant_deploy_retry_delay: 10
+ocp4_workload_athena_tenant_api_retries: 10
+ocp4_workload_athena_tenant_api_retry_delay: 5

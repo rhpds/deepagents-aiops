@@ -1,0 +1,54 @@
+image:
+  repository: {{ ocp4_workload_athena_tenant_image }}
+  tag: "{{ ocp4_workload_athena_tenant_tag }}"
+  pullPolicy: Always
+
+aap2:
+  url: "{{ _ocp4_workload_athena_tenant_aap2_url }}"
+  username: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+  password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+  organization: "{{ ocp4_workload_athena_tenant_aap2_organization }}"
+
+kira:
+  url: "https://{{ _ocp4_workload_athena_tenant_kira_api_host }}"
+  apiKey: "{{ ocp4_workload_athena_tenant_kira_api_key }}"
+  frontendUrl: "https://{{ _ocp4_workload_athena_tenant_kira_frontend_host }}"
+
+rocketchat:
+  url: "https://{{ _ocp4_workload_athena_tenant_rocketchat_host }}"
+  apiAuthToken: "{{ _ocp4_workload_athena_tenant_rocketchat_auth_token }}"
+  apiUserId: "{{ _ocp4_workload_athena_tenant_rocketchat_user_id }}"
+  channel: "{{ ocp4_workload_athena_tenant_rocketchat_channel }}"
+
+maas:
+  apiBaseUrl: "{{ ocp4_workload_athena_tenant_maas_api_base }}"
+  virtualKey: "{{ ocp4_workload_athena_tenant_maas_api_key }}"
+
+tavily:
+  apiKey: ""
+
+agentConfig:
+  opsManagerModel: "{{ ocp4_workload_athena_tenant_ops_manager_model }}"
+  specialistModel: "{{ ocp4_workload_athena_tenant_specialist_model }}"
+  reviewerModel: "{{ ocp4_workload_athena_tenant_reviewer_model }}"
+  agentsMd: ""
+  subagentsYaml: ""
+
+skills:
+  persistence:
+    enabled: false
+
+route:
+  enabled: true
+
+service:
+  port: 8080
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
