@@ -30,13 +30,29 @@
   block:
     - name: Remove job templates
       ansible.controller.job_template:
-        name: "{{ ocp4_workload_aap2_tenant_config_job_template_ping_name }}"
+        name: "{{ jt_item.name }}"
         organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
         state: absent
         controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
         controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      loop: "{{ ocp4_workload_aap2_tenant_config_job_templates }}"
+      loop_control:
+        loop_var: jt_item
+        label: "{{ jt_item.name }}"
+      ignore_errors: true
+
+    - name: Remove broken execution environment
+      ansible.controller.execution_environment:
+        name: "{{ ocp4_workload_aap2_tenant_config_broken_ee_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      ignore_errors: true
 
     - name: Remove project
       ansible.controller.project:
@@ -68,6 +84,18 @@
         controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+
+    - name: Remove backdoor credential
+      ansible.controller.credential:
+        name: "{{ ocp4_workload_aap2_tenant_config_backdoor_credential_name }}"
+        organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+        credential_type: Machine
+        state: absent
+        controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+        controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+        controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+        validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      ignore_errors: true
 
     - name: Remove OpenShift credential
       ansible.controller.credential:
