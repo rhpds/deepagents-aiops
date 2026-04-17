@@ -39,8 +39,72 @@ ocp4_workload_aap2_tenant_config_project_name: "{{ guid }}-plays"
 ocp4_workload_aap2_tenant_config_project_scm_url: https://github.com/rhpds/agentic-aiops-plays.git
 ocp4_workload_aap2_tenant_config_project_scm_branch: main
 
-# Job templates
-ocp4_workload_aap2_tenant_config_job_template_ping_name: "Ping RHEL VM"
+# Backdoor credential (intentionally mismatched SSH key for testing)
+ocp4_workload_aap2_tenant_config_backdoor_credential_name: admin-backdoor-key
+ocp4_workload_aap2_tenant_config_backdoor_ssh_user: admin
+ocp4_workload_aap2_tenant_config_backdoor_ssh_key: |
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn
+  NhAAAAAwEAAQAAAQEAq8x1ZGK2y1IFCxNz0mPRJnItGGt9LsDfbNBdvoP43lOkCL7HOv6+
+  uPiLHUmvnULiqYajD6uT9ffRzHpGduFaIGk7NPEt75QhPS2qk/pV6NptyiUefDM2dbpPan
+  r7tWa7MsPSAK/f8jUjD9wBqNy1WukpZoLUTbUbTNGFZrgdyKxhXS/BSSkmSHB1C8zW6OVt
+  GsZjyI3fCFB+0moF/tWlXneC2wrbOjeSug+dwmrwjmrb+MRNTkw/o6sZ45QnF8m+xjAjgk
+  njMl8xlqqt6K+8ciTQRld+IiSAdOX/wGYFnau/7KsufNp/un5MIHJoAgg2bWtqNRfF4StA
+  rxD/Tbej0wAAA9CkxUzvpMVM7wAAAAdzc2gtcnNhAAABAQCrzHVkYrbLUgULE3PSY9Emci
+  0Ya30uwN9s0F2+g/jeU6QIvsc6/r64+IsdSa+dQuKphqMPq5P199HMekZ24VogaTs08S3v
+  lCE9LaqT+lXo2m3KJR58MzZ1uk9qevu1Zrsyw9IAr9/yNSMP3AGo3LVa6SlmgtRNtRtM0Y
+  VmuB3IrGFdL8FJKSZIcHULzNbo5W0axmPIjd8IUH7SagX+1aVed4LbCts6N5K6D53CavCO
+  atv4xE1OTD+jqxnjlCcXyb7GMCOCSeMyXzGWqq3or7xyJNBGV34iJIB05f/AZgWdq7/sqy
+  582n+6fkwgcmgCCDZta2o1F8XhK0CvEP9Nt6PTAAAAAwEAAQAAAQAakAlSlSS4OR1IgiB1
+  VjOfYyXv0abQVMf21hy4eUVAcuQ46e56A6tPhDZWN+9sPEw5c/TAVoIRFNkeaYV9mghKXJ
+  rn66ZzlY6yG9509M7Vqvgwuh6Fi5GPEFh5GTzT5mdpSPeuXYMduvOJ3zVue3ma7dQV4oKa
+  5TasYPTkVfFc9nFOMR+HlXxN7z7kcuzNnwn9Y0FbfBUc374P+Mp1meETb1dbMofo8zGMYo
+  ZtDC0CjU6YX76dbZwXTDKPjoA4ndMOY039hUfRO3h3AvkREcbu7/oB1b54khDOC/s6KR+8
+  /VJLXBbsVIiZZgAfnbOyruyxNTzIaAVH/fsSZHS2r9gxAAAAgGpVunrQOri/2VlRI54VYC
+  AHibazkxA/Q1jGv5T8qikCCvnciYwKdWKksW/CrdPtkUMTv5vud8zWfsqdLiEWxGmAnOdD
+  TmAJ3WqfkZDR5iY1LEdwUrAc01kf5pV0Em8zZrYwHy2b9SW39OQ2uecWJw+ZkRsM5K10rU
+  yetiB1U/9rAAAAgQDZmwsMwIB7zSZ06yjCk0OwM9O429Q1NDCkKlclijs31dZ2ZUrDlGh8
+  psvD19jptnbxa7X4J2uWYPdWleojQRTSb9DJE6YQSs2e/iC56WNzKLCBWFivfkVadWjbE4
+  sC885/+rHqolbVanD/drA8+FKMZUNfMJv596cwjdv1dAukCwAAAIEAyhxgIhX8N36cKdIg
+  BKgy0ETSnTaCn5KRathoTwarytnXn8kzPjA6S0RABBFCeA7xylJ8SCL0u6E7le96eUm7hn
+  4t7WWwjGE7lOhwFLAS9lPDqfXoxO5JLAILwGYbgw1gqndbnFFEz21eSFpISWVAJuIV2msp
+  UUfLYbKdBbqIVFkAAAAYdG9rQE1CUDE2LU0zLXRvay0yLmxvY2FsAQID
+  -----END OPENSSH PRIVATE KEY-----
+
+# Broken Execution Environment (intentionally unpullable image)
+ocp4_workload_aap2_tenant_config_broken_ee_name: "Custom Health Check EE"
+ocp4_workload_aap2_tenant_config_broken_ee_image: "registry.internal.example.com/ee/health-check-ee:1.0"
+
+# Job templates (provisioned via loop in workload.yml)
+ocp4_workload_aap2_tenant_config_job_templates:
+  - name: Ping RHEL VM
+    playbook: ping.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+  - name: Ping RHEL Admin
+    playbook: ping.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_backdoor_credential_name }}"
+  - name: Install Web Server
+    playbook: install-webserver.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+  - name: Start Web Server
+    playbook: start-webserver.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+  - name: Deploy Payment Service
+    playbook: deploy-app.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
+  - name: Verify Service DNS
+    playbook: check-dns.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+  - name: Deploy Monitoring Agent
+    playbook: deploy-secure-app.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
+  - name: Update System Packages
+    playbook: update-packages.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+  - name: System Health Check
+    playbook: run-health-check.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+    execution_environment: "{{ ocp4_workload_aap2_tenant_config_broken_ee_name }}"
 
 # Retry configuration
 ocp4_workload_aap2_tenant_config_retries: 30

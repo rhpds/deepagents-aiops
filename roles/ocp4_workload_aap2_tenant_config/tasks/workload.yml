@@ -123,6 +123,21 @@
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
   no_log: true
 
+- name: Create backdoor SSH key credential
+  ansible.controller.credential:
+    name: "{{ ocp4_workload_aap2_tenant_config_backdoor_credential_name }}"
+    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+    credential_type: Machine
+    inputs:
+      username: "{{ ocp4_workload_aap2_tenant_config_backdoor_ssh_user }}"
+      ssh_key_data: "{{ ocp4_workload_aap2_tenant_config_backdoor_ssh_key }}"
+    state: present
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  no_log: true
+
 # -------------------------------------------------------------------
 # 4. Inventory with VM host
 # -------------------------------------------------------------------
@@ -165,22 +180,42 @@
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
 
 # -------------------------------------------------------------------
-# 6. Job templates
+# 5b. Broken Execution Environment (for testing)
 # -------------------------------------------------------------------
-- name: Create Ping RHEL VM job template
-  ansible.controller.job_template:
-    name: "{{ ocp4_workload_aap2_tenant_config_job_template_ping_name }}"
+- name: Create broken execution environment
+  ansible.controller.execution_environment:
+    name: "{{ ocp4_workload_aap2_tenant_config_broken_ee_name }}"
     organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
-    project: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
-    inventory: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
-    playbook: ping.yml
-    credentials:
-      - "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+    image: "{{ ocp4_workload_aap2_tenant_config_broken_ee_image }}"
+    pull: missing
     state: present
     controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+
+# -------------------------------------------------------------------
+# 6. Job templates
+# -------------------------------------------------------------------
+- name: Create job templates
+  ansible.controller.job_template:
+    name: "{{ jt_item.name }}"
+    organization: "{{ ocp4_workload_aap2_tenant_config_org_name }}"
+    project: "{{ ocp4_workload_aap2_tenant_config_project_name }}"
+    inventory: "{{ ocp4_workload_aap2_tenant_config_inventory_name }}"
+    playbook: "{{ jt_item.playbook }}"
+    credentials:
+      - "{{ jt_item.credential }}"
+    execution_environment: "{{ jt_item.execution_environment | default(omit) }}"
+    state: present
+    controller_host: "{{ _ocp4_workload_aap2_tenant_config_controller_host }}"
+    controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
+    controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
+    validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  loop: "{{ ocp4_workload_aap2_tenant_config_job_templates }}"
+  loop_control:
+    loop_var: jt_item
+    label: "{{ jt_item.name }}"
 
 # -------------------------------------------------------------------
 # 7. Save user info
