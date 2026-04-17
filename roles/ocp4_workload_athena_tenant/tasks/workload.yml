@@ -305,7 +305,7 @@
     validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
     body_format: json
     body:
-      id: "{{ _ocp4_workload_athena_tenant_notification_template_id }}"
+      id: "{{ _ocp4_workload_athena_tenant_notification_template_id | int }}"
     status_code:
       - 200
       - 204
@@ -313,7 +313,6 @@
   loop_control:
     loop_var: jt_item
     label: "{{ jt_item.name }}"
-  no_log: true
 
 # -------------------------------------------------------------------
 # 11. Save connection info
