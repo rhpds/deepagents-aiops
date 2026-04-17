@@ -5,7 +5,7 @@
 # ===================================================================
 
 # Container image
-ocp4_workload_athena_tenant_image: quay.io/tonykay/athena-aiops
+ocp4_workload_athena_tenant_image: quay.io/rhpds/athena-aiops
 ocp4_workload_athena_tenant_tag: latest
 
 # Helm chart source
