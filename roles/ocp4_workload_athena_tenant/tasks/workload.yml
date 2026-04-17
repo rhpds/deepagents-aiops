@@ -265,9 +265,9 @@
     controller_password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
     validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
 
-- name: Get all job templates in tenant org
+- name: Get job templates in tenant org
   ansible.builtin.uri:
-    url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/"
+    url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/?organization__name={{ ocp4_workload_athena_tenant_aap2_organization }}"
     method: GET
     user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
     password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
