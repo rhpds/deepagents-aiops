@@ -56,39 +56,14 @@
   no_log: true
 
 # -------------------------------------------------------------------
-# 2. Discover Kira routes in tenant namespace
+# 2. Discover Kira frontend route (API is same-namespace service)
 # -------------------------------------------------------------------
-- name: Get Kira API route
-  kubernetes.core.k8s_info:
-    api_version: route.openshift.io/v1
-    kind: Route
-    namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
-    label_selectors:
-      - "app.kubernetes.io/component=api"
-      - "app.kubernetes.io/instance=kira"
-  register: r_kira_api_route
-
-- name: Assert Kira API route exists
-  ansible.builtin.assert:
-    that:
-      - r_kira_api_route.resources | length > 0
-    fail_msg: >-
-      Kira API route not found in namespace '{{ ocp4_workload_athena_tenant_namespace }}'.
-      Ensure ocp4_workload_kira_tenant ran before this role.
-
-- name: Set Kira API host fact
-  ansible.builtin.set_fact:
-    _ocp4_workload_athena_tenant_kira_api_host: >-
-      {{ r_kira_api_route.resources[0].spec.host }}
-
 - name: Get Kira frontend route
   kubernetes.core.k8s_info:
     api_version: route.openshift.io/v1
     kind: Route
+    name: "{{ ocp4_workload_athena_tenant_kira_frontend_route_name }}"
     namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
-    label_selectors:
-      - "app.kubernetes.io/component=frontend"
-      - "app.kubernetes.io/instance=kira"
   register: r_kira_frontend_route
 
 - name: Assert Kira frontend route exists
@@ -96,7 +71,8 @@
     that:
       - r_kira_frontend_route.resources | length > 0
     fail_msg: >-
-      Kira frontend route not found in namespace '{{ ocp4_workload_athena_tenant_namespace }}'.
+      Kira frontend route '{{ ocp4_workload_athena_tenant_kira_frontend_route_name }}'
+      not found in namespace '{{ ocp4_workload_athena_tenant_namespace }}'.
       Ensure ocp4_workload_kira_tenant ran before this role.
 
 - name: Set Kira frontend host fact

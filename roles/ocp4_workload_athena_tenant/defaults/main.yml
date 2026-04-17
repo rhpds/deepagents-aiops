@@ -25,8 +25,10 @@ ocp4_workload_athena_tenant_aap2_admin_namespace: aap
 ocp4_workload_athena_tenant_aap2_organization: "org-{{ guid }}"
 ocp4_workload_athena_tenant_aap2_validate_certs: false
 
-# Kira API key (must match the key used by ocp4_workload_kira_tenant)
+# Kira (same namespace — use internal service URL for API)
+ocp4_workload_athena_tenant_kira_api_url: "http://api:8000"
 ocp4_workload_athena_tenant_kira_api_key: "{{ common_password | default('dev-api-key') }}"
+ocp4_workload_athena_tenant_kira_frontend_route_name: kira-frontend
 
 # Rocket.Chat admin credentials (must match ocp4_workload_rocketchat_tenant)
 ocp4_workload_athena_tenant_rocketchat_admin_username: admin
