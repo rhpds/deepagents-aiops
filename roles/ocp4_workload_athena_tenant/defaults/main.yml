@@ -9,7 +9,7 @@ ocp4_workload_athena_tenant_image: quay.io/tonykay/athena-aiops
 ocp4_workload_athena_tenant_tag: latest
 
 # Helm chart source
-ocp4_workload_athena_tenant_helm_repo: https://github.com/tonykay/athena-aiops-deep-agent.git
+ocp4_workload_athena_tenant_helm_repo: https://github.com/rhpds/athena-aiops-deep-agent.git
 ocp4_workload_athena_tenant_helm_repo_ref: main
 ocp4_workload_athena_tenant_helm_chart_path: deploy/helm/athena
 
