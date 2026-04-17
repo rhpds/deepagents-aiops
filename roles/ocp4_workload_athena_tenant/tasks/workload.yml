@@ -279,13 +279,12 @@
 
 - name: Get notification template ID
   ansible.builtin.uri:
-    url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/notification_templates/"
+    url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/notification_templates/?name=athena-webhook&organization__name={{ ocp4_workload_athena_tenant_aap2_organization }}"
     method: GET
     user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
     password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
     force_basic_auth: true
     validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
-    body_format: json
     status_code: 200
   register: r_notification_templates
   no_log: true
@@ -293,9 +292,7 @@
 - name: Set notification template ID fact
   ansible.builtin.set_fact:
     _ocp4_workload_athena_tenant_notification_template_id: >-
-      {{ r_notification_templates.json.results
-         | selectattr('name', 'equalto', 'athena-webhook')
-         | map(attribute='id') | first }}
+      {{ r_notification_templates.json.results[0].id }}
 
 - name: Attach webhook to job templates as failure notification
   ansible.builtin.uri:
