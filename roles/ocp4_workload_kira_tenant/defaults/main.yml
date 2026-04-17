@@ -14,7 +14,7 @@ ocp4_workload_kira_tenant_namespace: "{{ ocp4_workload_username }}-agentic"
 
 # Container images
 ocp4_workload_kira_tenant_api_image: quay.io/rhpds/kira-api
-ocp4_workload_kira_tenant_api_tag: "0.6.0"
+ocp4_workload_kira_tenant_api_tag: "0.7.0"
 ocp4_workload_kira_tenant_frontend_image: quay.io/rhpds/kira-frontend
 ocp4_workload_kira_tenant_frontend_tag: "0.6.0"
 
