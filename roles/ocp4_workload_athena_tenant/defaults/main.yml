@@ -30,7 +30,8 @@ ocp4_workload_athena_tenant_kira_api_url: "http://api:8000"
 ocp4_workload_athena_tenant_kira_api_key: "{{ common_password | default('dev-api-key') }}"
 ocp4_workload_athena_tenant_kira_frontend_route_name: kira-frontend
 
-# Rocket.Chat admin credentials (must match ocp4_workload_rocketchat_tenant)
+# Rocket.Chat (same namespace — use internal service URL)
+ocp4_workload_athena_tenant_rocketchat_url: "http://rocketchat-rocketchat:80"
 ocp4_workload_athena_tenant_rocketchat_admin_username: admin
 ocp4_workload_athena_tenant_rocketchat_admin_password: "{{ common_password | default('admin') }}"
 

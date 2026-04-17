@@ -15,7 +15,7 @@ kira:
   frontendUrl: "https://{{ _ocp4_workload_athena_tenant_kira_frontend_host }}"
 
 rocketchat:
-  url: "https://{{ _ocp4_workload_athena_tenant_rocketchat_host }}"
+  url: "{{ ocp4_workload_athena_tenant_rocketchat_url }}"
   apiAuthToken: "{{ _ocp4_workload_athena_tenant_rocketchat_auth_token }}"
   apiUserId: "{{ _ocp4_workload_athena_tenant_rocketchat_user_id }}"
   channel: "{{ ocp4_workload_athena_tenant_rocketchat_channel }}"
