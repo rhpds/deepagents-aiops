@@ -100,8 +100,25 @@
   no_log: true
 
 # -------------------------------------------------------------------
-# 5. Wait for API to be ready
-# (LLM config was patched into configmap/secret before pods start)
+# 5. Restart API to pick up LLM config patches
+# -------------------------------------------------------------------
+- name: Restart Kira API deployment to pick up LLM config
+  when: ocp4_workload_kira_tenant_llm_base_url | default('') | length > 0
+  kubernetes.core.k8s:
+    state: patched
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_kira_tenant_release_name }}-api"
+    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+    definition:
+      spec:
+        template:
+          metadata:
+            annotations:
+              kira.redhat.com/restartedAt: "{{ ansible_date_time.iso8601 }}"
+
+# -------------------------------------------------------------------
+# 6. Wait for API to be ready
 # -------------------------------------------------------------------
 - name: Wait for Kira API deployment to be available
   kubernetes.core.k8s_info:
