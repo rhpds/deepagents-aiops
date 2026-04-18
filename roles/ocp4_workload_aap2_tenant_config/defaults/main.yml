@@ -40,7 +40,7 @@ ocp4_workload_aap2_tenant_config_project_scm_url: https://github.com/rhpds/agent
 ocp4_workload_aap2_tenant_config_project_scm_branch: main
 
 # Backdoor credential (intentionally mismatched SSH key for testing)
-ocp4_workload_aap2_tenant_config_backdoor_credential_name: admin-backdoor-key
+ocp4_workload_aap2_tenant_config_backdoor_credential_name: "admin-backdoor-key-{{ guid }}"
 ocp4_workload_aap2_tenant_config_backdoor_ssh_user: admin
 ocp4_workload_aap2_tenant_config_backdoor_ssh_key: |
   -----BEGIN OPENSSH PRIVATE KEY-----
@@ -72,7 +72,7 @@ ocp4_workload_aap2_tenant_config_backdoor_ssh_key: |
   -----END OPENSSH PRIVATE KEY-----
 
 # Broken Execution Environment (intentionally unpullable image)
-ocp4_workload_aap2_tenant_config_broken_ee_name: "Custom Health Check EE"
+ocp4_workload_aap2_tenant_config_broken_ee_name: "health-check-ee-{{ guid }}"
 ocp4_workload_aap2_tenant_config_broken_ee_image: "registry.internal.example.com/ee/health-check-ee:1.0"
 
 # Job templates (provisioned via loop in workload.yml)
