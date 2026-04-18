@@ -115,7 +115,7 @@
         template:
           metadata:
             annotations:
-              kira.redhat.com/restartedAt: "{{ ansible_date_time.iso8601 }}"
+              kira.redhat.com/restartedAt: "{{ now(utc=true) | string }}"
 
 # -------------------------------------------------------------------
 # 6. Wait for API to be ready
