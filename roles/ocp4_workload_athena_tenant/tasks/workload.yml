@@ -209,6 +209,10 @@
     release_namespace: "{{ ocp4_workload_athena_tenant_namespace }}"
     values_files:
       - /tmp/athena-helm-values.yaml
+    values:
+      agentConfig:
+        agentsMd: "{{ lookup('file', '/tmp/athena-helm/AGENTS.md') }}"
+        subagentsYaml: "{{ lookup('file', '/tmp/athena-helm/subagents.yaml') }}"
     state: present
     wait: false
 
