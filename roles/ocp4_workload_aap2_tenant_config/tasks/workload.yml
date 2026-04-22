@@ -54,6 +54,9 @@
       - 400
   register: r_org
   changed_when: r_org.status == 201
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  until: r_org is not failed
 
 # -------------------------------------------------------------------
 # 2. User (Gateway API, then org admin via Controller)
@@ -76,6 +79,9 @@
       - 400
   register: r_user
   changed_when: r_user.status == 201
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  until: r_user is not failed
   no_log: true
 
 - name: Add user as org admin
@@ -88,6 +94,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  until: _r_role is not failed
+  register: _r_role
 
 # -------------------------------------------------------------------
 # 3. Credentials
@@ -105,6 +115,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_cred_machine
+  until: _r_cred_machine is not failed
   no_log: true
 
 - name: Create OpenShift credential
@@ -121,6 +135,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_cred_ocp
+  until: _r_cred_ocp is not failed
   no_log: true
 
 - name: Create backdoor SSH key credential
@@ -136,6 +154,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_cred_backdoor
+  until: _r_cred_backdoor is not failed
   no_log: true
 
 # -------------------------------------------------------------------
@@ -150,6 +172,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_inventory
+  until: _r_inventory is not failed
 
 - name: Add RHEL VM to inventory
   ansible.controller.host:
@@ -160,6 +186,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_host
+  until: _r_host is not failed
 
 # -------------------------------------------------------------------
 # 5. Project
@@ -178,6 +208,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_project
+  until: _r_project is not failed
 
 # -------------------------------------------------------------------
 # 5b. Broken Execution Environment (for testing)
@@ -193,6 +227,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_ee
+  until: _r_ee is not failed
 
 # -------------------------------------------------------------------
 # 6. Job templates
@@ -212,6 +250,10 @@
     controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
     controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
     validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+  retries: "{{ ocp4_workload_aap2_tenant_config_retries }}"
+  delay: "{{ ocp4_workload_aap2_tenant_config_retry_delay }}"
+  register: _r_jt
+  until: _r_jt is not failed
   loop: "{{ ocp4_workload_aap2_tenant_config_job_templates }}"
   loop_control:
     loop_var: jt_item
