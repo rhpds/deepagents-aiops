@@ -321,7 +321,44 @@
       athena_webhook_url: "{{ _ocp4_workload_athena_tenant_url }}/api/v1/webhook/aap2"
 
 # -------------------------------------------------------------------
-# 12. Cleanup temp files
+# 12. Launch seed job to pre-populate Kira (fire-and-forget)
+# -------------------------------------------------------------------
+- name: Launch seed job to pre-populate Kira
+  when: ocp4_workload_athena_tenant_seed_job_enabled | bool
+  block:
+    - name: Look up seed job template by name
+      ansible.builtin.uri:
+        url: >-
+          {{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/?name={{ ocp4_workload_athena_tenant_seed_job_name | urlencode }}&organization__name={{ ocp4_workload_athena_tenant_aap2_organization | urlencode }}
+        method: GET
+        user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+        password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+        status_code: 200
+      register: r_seed_template
+
+    - name: Launch seed job template
+      when: r_seed_template.json.count | default(0) > 0
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/{{ r_seed_template.json.results[0].id }}/launch/"
+        method: POST
+        user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+        password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+        body_format: json
+        body: "{}"
+        status_code: 201
+      register: r_seed_job
+
+    - name: Log seed job launch
+      when: r_seed_job is defined and r_seed_job is not skipped
+      ansible.builtin.debug:
+        msg: "Seed job launched: {{ ocp4_workload_athena_tenant_seed_job_name }} (job {{ r_seed_job.json.id | default('unknown') }})"
+
+# -------------------------------------------------------------------
+# 13. Cleanup temp files
 # -------------------------------------------------------------------
 - name: Clean up Athena temp files
   ansible.builtin.file:

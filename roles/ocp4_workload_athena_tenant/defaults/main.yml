@@ -49,6 +49,10 @@ ocp4_workload_athena_tenant_ops_manager_model: "openai/claude-sonnet-4-6"
 ocp4_workload_athena_tenant_specialist_model: "openai/claude-sonnet-4-6"
 ocp4_workload_athena_tenant_reviewer_model: "openai/claude-3-5-haiku"
 
+# Seed job — launch a failing job during provisioning so Kira has a ticket on first login
+ocp4_workload_athena_tenant_seed_job_enabled: true
+ocp4_workload_athena_tenant_seed_job_name: "02 Ping RHEL Admin"
+
 # Retry configuration
 ocp4_workload_athena_tenant_deploy_retries: 60
 ocp4_workload_athena_tenant_deploy_retry_delay: 10
