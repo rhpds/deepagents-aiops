@@ -77,31 +77,31 @@ ocp4_workload_aap2_tenant_config_broken_ee_image: "registry.internal.example.com
 
 # Job templates (provisioned via loop in workload.yml)
 ocp4_workload_aap2_tenant_config_job_templates:
-  - name: Ping RHEL VM
+  - name: "01 Ping RHEL VM"
     playbook: ping.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
-  - name: Ping RHEL Admin
+  - name: "02 Ping RHEL Admin"
     playbook: ping.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_backdoor_credential_name }}"
-  - name: Install Web Server
+  - name: "03 Install Web Server"
     playbook: install-webserver.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
-  - name: Start Web Server
+  - name: "04 Start Web Server"
     playbook: start-webserver.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
-  - name: Deploy Payment Service
-    playbook: deploy-app.yml
-    credential: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
-  - name: Verify Service DNS
-    playbook: check-dns.yml
-    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
-  - name: Deploy Monitoring Agent
-    playbook: deploy-secure-app.yml
-    credential: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
-  - name: Update System Packages
+  - name: "05 Update System Packages"
     playbook: update-packages.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
-  - name: System Health Check
+  - name: "06 Verify Service DNS"
+    playbook: check-dns.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
+  - name: "07 Deploy Payment Service"
+    playbook: deploy-app.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
+  - name: "08 Deploy Monitoring Agent"
+    playbook: deploy-secure-app.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_ocp_credential_name }}"
+  - name: "09 System Health Check"
     playbook: run-health-check.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
     execution_environment: "{{ ocp4_workload_aap2_tenant_config_broken_ee_name }}"
