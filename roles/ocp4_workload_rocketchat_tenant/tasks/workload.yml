@@ -50,6 +50,13 @@
       image:
         repository: "{{ ocp4_workload_rocketchat_tenant_image }}"
         tag: "{{ ocp4_workload_rocketchat_tenant_image_tag }}"
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
       microservices:
         enabled: false
       persistence:
@@ -85,6 +92,13 @@
           databases:
             - rocketchat
           rootPassword: "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
         persistence:
           enabled: true
           size: "{{ ocp4_workload_rocketchat_tenant_mongodb_storage }}"
