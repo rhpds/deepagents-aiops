@@ -156,6 +156,10 @@
     pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
     command: >-
       sed -i 's|sqlalchemy.url = .*|sqlalchemy.url = postgresql://kira:{{ ocp4_workload_kira_tenant_postgres_password }}@postgres:5432/kira|' /app/alembic.ini
+  register: r_alembic_fix
+  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
+  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
+  until: r_alembic_fix is succeeded
 
 - name: Run Kira database migration
   when: r_kira_api_pod.resources | length > 0
