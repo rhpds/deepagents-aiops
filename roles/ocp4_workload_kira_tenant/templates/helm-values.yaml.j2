@@ -43,6 +43,10 @@ ttyd:
     tag: "{{ ocp4_workload_kira_tenant_ttyd_tag }}"
     pullPolicy: IfNotPresent
 
+llm:
+  baseUrl: "{{ ocp4_workload_kira_tenant_llm_base_url }}"
+  apiKey: "{{ ocp4_workload_kira_tenant_llm_api_key }}"
+
 route:
   enabled: true
 {% if ocp4_workload_kira_tenant_route_host | default('') | length > 0 %}
