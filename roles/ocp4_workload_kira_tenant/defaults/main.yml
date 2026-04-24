@@ -20,7 +20,7 @@ ocp4_workload_kira_tenant_frontend_tag: "0.9.0"
 
 # ttyd troubleshooting terminal
 ocp4_workload_kira_tenant_ttyd_image: quay.io/rhpds/kira-ttyd
-ocp4_workload_kira_tenant_ttyd_tag: "0.9.0"
+ocp4_workload_kira_tenant_ttyd_tag: "0.9.1"
 ocp4_workload_kira_tenant_ttyd_enabled: true
 
 # PostgreSQL
