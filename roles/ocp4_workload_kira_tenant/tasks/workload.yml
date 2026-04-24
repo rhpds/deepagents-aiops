@@ -137,6 +137,10 @@
 # -------------------------------------------------------------------
 # 7. Run database migration
 # -------------------------------------------------------------------
+- name: Wait for API pod to stabilize
+  ansible.builtin.pause:
+    seconds: 10
+
 - name: Get Kira API pod name
   kubernetes.core.k8s_info:
     api_version: v1
@@ -148,6 +152,9 @@
     field_selectors:
       - "status.phase=Running"
   register: r_kira_api_pod
+  retries: 5
+  delay: 10
+  until: r_kira_api_pod.resources | length > 0
 
 - name: Fix alembic.ini to use correct database URL
   when: r_kira_api_pod.resources | length > 0
