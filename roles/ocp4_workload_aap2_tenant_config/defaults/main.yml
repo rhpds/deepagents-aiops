@@ -105,6 +105,9 @@ ocp4_workload_aap2_tenant_config_job_templates:
     playbook: run-health-check.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
     execution_environment: "{{ ocp4_workload_aap2_tenant_config_broken_ee_name }}"
+  - name: "10 Install Python 3.14"
+    playbook: install-python314.yml
+    credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
 
 # Retry configuration
 ocp4_workload_aap2_tenant_config_retries: 30
