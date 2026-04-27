@@ -42,6 +42,7 @@ ttyd:
     repository: {{ ocp4_workload_kira_tenant_ttyd_image }}
     tag: "{{ ocp4_workload_kira_tenant_ttyd_tag }}"
     pullPolicy: IfNotPresent
+  fontSize: "{{ ocp4_workload_kira_tenant_ttyd_font_size | default('') }}"
 
 llm:
   baseUrl: "{{ ocp4_workload_kira_tenant_llm_base_url }}"
