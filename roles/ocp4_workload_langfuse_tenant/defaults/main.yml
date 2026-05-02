@@ -1,0 +1,32 @@
+---
+# ===================================================================
+# Role: ocp4_workload_langfuse_tenant
+# Deploys LangFuse observability per tenant via official Helm chart.
+# ===================================================================
+
+# Target namespace (defaults to existing tenant namespace)
+ocp4_workload_langfuse_tenant_namespace: "{{ ocp4_workload_username }}-agentic"
+
+# Helm chart source (official upstream)
+ocp4_workload_langfuse_tenant_helm_repo_name: langfuse
+ocp4_workload_langfuse_tenant_helm_repo_url: https://langfuse.github.io/langfuse-k8s
+ocp4_workload_langfuse_tenant_helm_chart_version: ""
+
+# Helm release name
+ocp4_workload_langfuse_tenant_release_name: langfuse
+
+# LangFuse configuration
+ocp4_workload_langfuse_tenant_salt: "{{ common_password | default('langfuse-salt') }}"
+ocp4_workload_langfuse_tenant_nextauth_secret: "{{ common_password | default('langfuse-nextauth') }}"
+ocp4_workload_langfuse_tenant_encryption_key: "{{ common_password | default('langfuse-encryption-key-32chars!!') }}"
+
+# PostgreSQL (bundled with the Helm chart)
+ocp4_workload_langfuse_tenant_postgres_password: "{{ common_password | default('langfuse') }}"
+
+# Initial admin user
+ocp4_workload_langfuse_tenant_admin_email: "admin@example.com"
+ocp4_workload_langfuse_tenant_admin_password: "{{ common_password | default('admin123') }}"
+
+# Retry configuration
+ocp4_workload_langfuse_tenant_deploy_retries: 60
+ocp4_workload_langfuse_tenant_deploy_retry_delay: 10

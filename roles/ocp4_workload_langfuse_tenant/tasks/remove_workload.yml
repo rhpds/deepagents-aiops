@@ -1,0 +1,15 @@
+---
+- name: Remove LangFuse Helm release
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_langfuse_tenant_release_name }}"
+    release_namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+    state: absent
+    wait: true
+
+- name: Remove LangFuse route
+  kubernetes.core.k8s:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: langfuse
+    namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+    state: absent

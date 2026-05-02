@@ -1,0 +1,35 @@
+langfuse:
+  salt:
+    value: "{{ ocp4_workload_langfuse_tenant_salt }}"
+  nextauth:
+    secret:
+      value: "{{ ocp4_workload_langfuse_tenant_nextauth_secret }}"
+    url: "{{ _ocp4_workload_langfuse_tenant_url | default('http://localhost:3000') }}"
+  encryptionKey:
+    value: "{{ ocp4_workload_langfuse_tenant_encryption_key }}"
+  init:
+    user:
+      name: Admin
+      email: "{{ ocp4_workload_langfuse_tenant_admin_email }}"
+      password: "{{ ocp4_workload_langfuse_tenant_admin_password }}"
+    org:
+      name: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+    project:
+      name: athena
+
+postgresql:
+  auth:
+    username: langfuse
+    password: "{{ ocp4_workload_langfuse_tenant_postgres_password }}"
+
+clickhouse:
+  auth:
+    password: "{{ ocp4_workload_langfuse_tenant_postgres_password }}"
+
+redis:
+  auth:
+    password: "{{ ocp4_workload_langfuse_tenant_postgres_password }}"
+
+s3:
+  auth:
+    rootPassword: "{{ ocp4_workload_langfuse_tenant_postgres_password }}"

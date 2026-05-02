@@ -1,0 +1,123 @@
+---
+# ===================================================================
+# Deploy LangFuse per tenant via official Helm chart
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1. Add Helm repo
+# -------------------------------------------------------------------
+- name: Add LangFuse Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ ocp4_workload_langfuse_tenant_helm_repo_name }}"
+    repo_url: "{{ ocp4_workload_langfuse_tenant_helm_repo_url }}"
+
+# -------------------------------------------------------------------
+# 2. Generate Helm values
+# -------------------------------------------------------------------
+- name: Template Helm values file
+  ansible.builtin.template:
+    src: helm-values.yaml.j2
+    dest: /tmp/langfuse-helm-values.yaml
+    mode: "0644"
+
+# -------------------------------------------------------------------
+# 3. Deploy via Helm
+# -------------------------------------------------------------------
+- name: Deploy LangFuse via Helm
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_langfuse_tenant_release_name }}"
+    chart_ref: "{{ ocp4_workload_langfuse_tenant_helm_repo_name }}/langfuse"
+    release_namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+    values_files:
+      - /tmp/langfuse-helm-values.yaml
+    state: present
+    wait: false
+
+# -------------------------------------------------------------------
+# 4. Create OpenShift Route for LangFuse UI
+# -------------------------------------------------------------------
+- name: Create LangFuse route
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: route.openshift.io/v1
+      kind: Route
+      metadata:
+        name: langfuse
+        namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+      spec:
+        to:
+          kind: Service
+          name: "{{ ocp4_workload_langfuse_tenant_release_name }}-web"
+          weight: 100
+        port:
+          targetPort: http
+        tls:
+          termination: edge
+          insecureEdgeTerminationPolicy: Redirect
+
+# -------------------------------------------------------------------
+# 5. Wait for LangFuse to be ready
+# -------------------------------------------------------------------
+- name: Wait for LangFuse web deployment to be available
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_langfuse_tenant_release_name }}-web"
+    namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+  register: r_langfuse_deploy
+  retries: "{{ ocp4_workload_langfuse_tenant_deploy_retries }}"
+  delay: "{{ ocp4_workload_langfuse_tenant_deploy_retry_delay }}"
+  until:
+    - r_langfuse_deploy.resources | length > 0
+    - r_langfuse_deploy.resources[0].status.readyReplicas is defined
+    - r_langfuse_deploy.resources[0].status.readyReplicas >= 1
+
+# -------------------------------------------------------------------
+# 6. Discover LangFuse route URL
+# -------------------------------------------------------------------
+- name: Get LangFuse route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: langfuse
+    namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+  register: r_langfuse_route
+
+- name: Set LangFuse URL facts
+  ansible.builtin.set_fact:
+    _ocp4_workload_langfuse_tenant_url: "https://{{ r_langfuse_route.resources[0].spec.host }}"
+    _ocp4_workload_langfuse_tenant_internal_url: "http://{{ ocp4_workload_langfuse_tenant_release_name }}-web.{{ ocp4_workload_langfuse_tenant_namespace }}.svc.cluster.local:3000"
+
+# -------------------------------------------------------------------
+# 7. Wait for LangFuse API to be responsive
+# -------------------------------------------------------------------
+- name: Wait for LangFuse API to be responsive
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_langfuse_tenant_url }}/api/public/health"
+    method: GET
+    validate_certs: false
+    status_code: 200
+  register: r_langfuse_health
+  retries: 30
+  delay: 10
+  until: r_langfuse_health is succeeded
+
+# -------------------------------------------------------------------
+# 8. Save connection info
+# -------------------------------------------------------------------
+- name: Save LangFuse connection info to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      langfuse_url: "{{ _ocp4_workload_langfuse_tenant_url }}"
+      langfuse_internal_url: "{{ _ocp4_workload_langfuse_tenant_internal_url }}"
+      langfuse_admin_email: "{{ ocp4_workload_langfuse_tenant_admin_email }}"
+      langfuse_admin_password: "{{ ocp4_workload_langfuse_tenant_admin_password }}"
+
+# -------------------------------------------------------------------
+# 9. Cleanup temp files
+# -------------------------------------------------------------------
+- name: Clean up LangFuse temp files
+  ansible.builtin.file:
+    path: /tmp/langfuse-helm-values.yaml
+    state: absent
