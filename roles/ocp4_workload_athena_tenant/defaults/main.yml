@@ -53,6 +53,11 @@ ocp4_workload_athena_tenant_reviewer_model: "openai/claude-3-5-haiku"
 ocp4_workload_athena_tenant_seed_job_enabled: true
 ocp4_workload_athena_tenant_seed_job_name: "10 Install Python 3.14"
 
+# LangFuse tracing (opt-in — leave empty to disable)
+ocp4_workload_athena_tenant_langfuse_secret_key: ""
+ocp4_workload_athena_tenant_langfuse_public_key: ""
+ocp4_workload_athena_tenant_langfuse_host: ""
+
 # Retry configuration
 ocp4_workload_athena_tenant_deploy_retries: 60
 ocp4_workload_athena_tenant_deploy_retry_delay: 10

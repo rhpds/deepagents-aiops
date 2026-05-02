@@ -50,3 +50,10 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
+
+{% if ocp4_workload_athena_tenant_langfuse_secret_key | default('') | length > 0 %}
+langfuse:
+  secretKey: "{{ ocp4_workload_athena_tenant_langfuse_secret_key }}"
+  publicKey: "{{ ocp4_workload_athena_tenant_langfuse_public_key }}"
+  host: "{{ ocp4_workload_athena_tenant_langfuse_host }}"
+{% endif %}
