@@ -50,20 +50,11 @@
       global:
         imageRegistry: quay.io/rhpds
       image:
-        repository: "{{ ocp4_workload_rocketchat_tenant_image }}"
+        repository: rocket.chat
         tag: "{{ ocp4_workload_rocketchat_tenant_image_tag }}"
-      nats:
-        nats:
-          image: quay.io/rhpds/nats:2.12-alpine
-        reloader:
-          image: quay.io/rhpds/nats-server-config-reloader:0.21.1
-        natsbox:
-          image: quay.io/rhpds/nats-box:0.19.2
-        exporter:
-          image: quay.io/rhpds/prometheus-nats-exporter:0.18.0
       extraInitContainers:
         - name: wait-for-mongodb
-          image: quay.io/rhpds/mongodb:6.0.10-debian-11-r8
+          image: quay.io/rhpds/bitnamilegacy/mongodb:6.0.10-debian-11-r8
           command: ["sh", "-c"]
           args:
             - |
@@ -137,14 +128,17 @@
         metrics:
           enabled: false
       nats:
-        resources:
-          requests:
-            cpu: 50m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+        nats:
+          image: quay.io/rhpds/nats:2.12-alpine
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
         reloader:
+          image: quay.io/rhpds/nats-server-config-reloader:0.21.1
           resources:
             requests:
               cpu: 25m
@@ -152,7 +146,8 @@
             limits:
               cpu: 100m
               memory: 128Mi
-        natsBox:
+        natsbox:
+          image: quay.io/rhpds/nats-box:0.19.2
           resources:
             requests:
               cpu: 25m
@@ -161,6 +156,7 @@
               cpu: 100m
               memory: 256Mi
         exporter:
+          image: quay.io/rhpds/prometheus-nats-exporter:0.18.0
           resources:
             requests:
               cpu: 25m
