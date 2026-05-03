@@ -84,6 +84,7 @@
           memory: 2Gi
       mongodb:
         enabled: true
+        architecture: standalone
         auth:
           passwords:
             - "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
@@ -104,13 +105,7 @@
             cpu: "1"
             memory: 2Gi
         metrics:
-          resources:
-            requests:
-              cpu: 25m
-              memory: 64Mi
-            limits:
-              cpu: 250m
-              memory: 256Mi
+          enabled: false
       nats:
         resources:
           requests:
