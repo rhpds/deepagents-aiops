@@ -80,6 +80,7 @@
               until mongosh --host rocketchat-mongodb --username root --password $MONGODB_ROOT_PASSWORD --eval "db.adminCommand('ping')" 2>/dev/null; do
                 sleep 3
               done
+              sleep 10
               echo "MongoDB is ready"
           env:
             - name: MONGODB_ROOT_PASSWORD
