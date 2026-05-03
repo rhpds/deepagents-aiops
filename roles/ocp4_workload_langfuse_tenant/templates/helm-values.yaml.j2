@@ -2,14 +2,13 @@ global:
   imageRegistry: quay.io/rhpds
 
 langfuse:
-  image:
-    registry: quay.io/rhpds
-    repository: langfuse
-    tag: "3.171.0"
+  web:
+    image:
+      repository: quay.io/rhpds/langfuse
+      tag: "3.171.0"
   worker:
     image:
-      registry: quay.io/rhpds
-      repository: langfuse-worker
+      repository: quay.io/rhpds/langfuse-worker
       tag: "3.171.0"
   salt:
     value: "{{ ocp4_workload_langfuse_tenant_salt }}"
