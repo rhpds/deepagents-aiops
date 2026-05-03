@@ -7,15 +7,25 @@ langfuse:
     url: "{{ _ocp4_workload_langfuse_tenant_url | default('http://localhost:3000') }}"
   encryptionKey:
     value: "{{ ocp4_workload_langfuse_tenant_encryption_key }}"
-  init:
-    user:
-      name: Admin
-      email: "{{ ocp4_workload_langfuse_tenant_admin_email }}"
-      password: "{{ ocp4_workload_langfuse_tenant_admin_password }}"
-    org:
-      name: "{{ ocp4_workload_langfuse_tenant_namespace }}"
-    project:
-      name: athena
+  additionalEnv:
+    - name: LANGFUSE_INIT_ORG_ID
+      value: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+    - name: LANGFUSE_INIT_ORG_NAME
+      value: "{{ ocp4_workload_langfuse_tenant_namespace }}"
+    - name: LANGFUSE_INIT_PROJECT_ID
+      value: athena
+    - name: LANGFUSE_INIT_PROJECT_NAME
+      value: athena
+    - name: LANGFUSE_INIT_PROJECT_PUBLIC_KEY
+      value: "{{ ocp4_workload_langfuse_tenant_public_key }}"
+    - name: LANGFUSE_INIT_PROJECT_SECRET_KEY
+      value: "{{ ocp4_workload_langfuse_tenant_secret_key }}"
+    - name: LANGFUSE_INIT_USER_EMAIL
+      value: "{{ ocp4_workload_langfuse_tenant_admin_email }}"
+    - name: LANGFUSE_INIT_USER_NAME
+      value: Admin
+    - name: LANGFUSE_INIT_USER_PASSWORD
+      value: "{{ ocp4_workload_langfuse_tenant_admin_password }}"
   extraInitContainers:
     - name: wait-for-postgres
       image: busybox:1.36

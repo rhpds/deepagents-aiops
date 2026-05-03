@@ -27,6 +27,10 @@ ocp4_workload_langfuse_tenant_postgres_password: "{{ common_password | default('
 ocp4_workload_langfuse_tenant_admin_email: "admin@example.com"
 ocp4_workload_langfuse_tenant_admin_password: "{{ common_password | default('admin123') }}"
 
+# Project API keys (used by Athena to send traces)
+ocp4_workload_langfuse_tenant_public_key: "pk-lf-{{ common_password | default('public') }}"
+ocp4_workload_langfuse_tenant_secret_key: "sk-lf-{{ common_password | default('secret') }}"
+
 # Retry configuration
 ocp4_workload_langfuse_tenant_deploy_retries: 60
 ocp4_workload_langfuse_tenant_deploy_retry_delay: 10
