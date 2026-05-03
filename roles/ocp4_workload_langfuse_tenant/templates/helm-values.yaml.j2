@@ -1,4 +1,16 @@
+global:
+  imageRegistry: quay.io/rhpds
+
 langfuse:
+  image:
+    registry: quay.io/rhpds
+    repository: langfuse
+    tag: "3.171.0"
+  worker:
+    image:
+      registry: quay.io/rhpds
+      repository: langfuse-worker
+      tag: "3.171.0"
   salt:
     value: "{{ ocp4_workload_langfuse_tenant_salt }}"
   nextauth:
@@ -28,7 +40,7 @@ langfuse:
       value: "{{ ocp4_workload_langfuse_tenant_admin_password }}"
   extraInitContainers:
     - name: wait-for-deps
-      image: langfuse/langfuse:3
+      image: quay.io/rhpds/langfuse:3.171.0
       command: ["sh", "-c"]
       args:
         - |
@@ -47,7 +59,7 @@ langfuse:
   worker:
     extraInitContainers:
       - name: wait-for-postgres
-        image: langfuse/langfuse:3
+        image: quay.io/rhpds/langfuse:3.171.0
         command: ["sh", "-c"]
         args:
           - |

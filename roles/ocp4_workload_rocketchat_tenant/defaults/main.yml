@@ -13,8 +13,8 @@ ocp4_workload_rocketchat_tenant_helm_repo_url: https://rocketchat.github.io/helm
 ocp4_workload_rocketchat_tenant_helm_chart: rocketchat
 ocp4_workload_rocketchat_tenant_release_name: rocketchat
 
-# Container image
-ocp4_workload_rocketchat_tenant_image: rocketchat/rocket.chat
+# Container image (mirrored to quay.io to avoid Docker Hub rate limits)
+ocp4_workload_rocketchat_tenant_image: quay.io/rhpds/rocket.chat
 ocp4_workload_rocketchat_tenant_image_tag: 7.8.0
 
 # Admin credentials

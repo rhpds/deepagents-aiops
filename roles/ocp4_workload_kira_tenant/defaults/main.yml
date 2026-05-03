@@ -25,7 +25,7 @@ ocp4_workload_kira_tenant_ttyd_enabled: true
 ocp4_workload_kira_tenant_ttyd_font_size: "16"
 
 # PostgreSQL
-ocp4_workload_kira_tenant_postgres_image: postgres
+ocp4_workload_kira_tenant_postgres_image: quay.io/rhpds/postgres
 ocp4_workload_kira_tenant_postgres_tag: "16"
 ocp4_workload_kira_tenant_postgres_password: "{{ common_password | default('kira') }}"
 ocp4_workload_kira_tenant_postgres_storage: 1Gi
