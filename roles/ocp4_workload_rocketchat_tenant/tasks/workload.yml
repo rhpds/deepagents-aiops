@@ -53,25 +53,14 @@
         repository: "{{ ocp4_workload_rocketchat_tenant_image }}"
         tag: "{{ ocp4_workload_rocketchat_tenant_image_tag }}"
       nats:
-        image:
-          registry: quay.io
-          repository: rhpds/nats
-          tag: 2.12-alpine
+        nats:
+          image: quay.io/rhpds/nats:2.12-alpine
         reloader:
-          image:
-            registry: quay.io
-            repository: rhpds/nats-server-config-reloader
-            tag: "0.21.1"
-        natsBox:
-          image:
-            registry: quay.io
-            repository: rhpds/nats-box
-            tag: "0.19.2"
+          image: quay.io/rhpds/nats-server-config-reloader:0.21.1
+        natsbox:
+          image: quay.io/rhpds/nats-box:0.19.2
         exporter:
-          image:
-            registry: quay.io
-            repository: rhpds/prometheus-nats-exporter
-            tag: "0.18.0"
+          image: quay.io/rhpds/prometheus-nats-exporter:0.18.0
       extraInitContainers:
         - name: wait-for-mongodb
           image: quay.io/rhpds/mongodb:6.0.10-debian-11-r8
