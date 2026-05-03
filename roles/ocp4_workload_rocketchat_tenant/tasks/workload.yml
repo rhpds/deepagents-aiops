@@ -59,7 +59,7 @@
           args:
             - |
               echo "Waiting for MongoDB rocketchat database..."
-              until mongosh "mongodb://rocketchat:${MONGODB_PASSWORD}@rocketchat-mongodb:27017/rocketchat" --eval "db.stats()" 2>/dev/null; do
+              until mongosh "mongodb://rocketchat:${MONGODB_PASSWORD}@rocketchat-mongodb-0.rocketchat-mongodb-headless:27017/rocketchat?directConnection=true" --eval "db.stats()" 2>/dev/null; do
                 echo "  retrying in 5s..."
                 sleep 5
               done
