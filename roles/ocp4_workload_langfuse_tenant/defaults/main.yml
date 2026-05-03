@@ -24,7 +24,7 @@ ocp4_workload_langfuse_tenant_encryption_key: "{{ lookup('password', '/dev/null 
 ocp4_workload_langfuse_tenant_postgres_password: "{{ common_password | default('langfuse') }}"
 
 # Initial admin user
-ocp4_workload_langfuse_tenant_admin_email: "admin@example.com"
+ocp4_workload_langfuse_tenant_admin_email: "{{ ocp4_workload_username | default('admin') }}@example.com"
 ocp4_workload_langfuse_tenant_admin_password: "{{ common_password | default('admin123') }}"
 
 # Project API keys (used by Athena to send traces)
