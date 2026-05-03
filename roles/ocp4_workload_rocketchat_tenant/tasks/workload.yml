@@ -120,7 +120,6 @@
           memory: 2Gi
       mongodb:
         enabled: true
-        architecture: standalone
         initdbScriptsConfigMap: ""
         image:
           registry: quay.io
