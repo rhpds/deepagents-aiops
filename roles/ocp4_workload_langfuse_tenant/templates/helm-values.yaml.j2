@@ -27,26 +27,16 @@ langfuse:
     - name: LANGFUSE_INIT_USER_PASSWORD
       value: "{{ ocp4_workload_langfuse_tenant_admin_password }}"
   extraInitContainers:
-    - name: wait-for-postgres
-      image: busybox:1.36
+    - name: wait-for-deps
+      image: langfuse/langfuse:3
       command: ["sh", "-c"]
       args:
         - |
-          echo "Waiting for PostgreSQL to accept connections..."
-          until nc -z langfuse-postgresql 5432; do
-            sleep 2
-          done
-          echo "PostgreSQL is ready"
-    - name: wait-for-clickhouse
-      image: busybox:1.36
-      command: ["sh", "-c"]
-      args:
-        - |
-          echo "Waiting for ClickHouse to accept connections..."
-          until nc -z langfuse-clickhouse 8123; do
-            sleep 2
-          done
-          echo "ClickHouse is ready"
+          echo "Waiting for PostgreSQL..."
+          until wget -qO- http://langfuse-postgresql:5432 2>&1 | grep -q ""; do sleep 2; done
+          echo "Waiting for ClickHouse..."
+          until wget -qO- http://langfuse-clickhouse:8123/ping 2>/dev/null; do sleep 2; done
+          echo "Dependencies ready"
   resources:
     requests:
       cpu: 100m
@@ -57,15 +47,13 @@ langfuse:
   worker:
     extraInitContainers:
       - name: wait-for-postgres
-        image: busybox:1.36
+        image: langfuse/langfuse:3
         command: ["sh", "-c"]
         args:
           - |
-            echo "Waiting for PostgreSQL to accept connections..."
-            until nc -z langfuse-postgresql 5432; do
-              sleep 2
-            done
-            echo "PostgreSQL is ready"
+            echo "Waiting for PostgreSQL..."
+            until wget -qO- http://langfuse-postgresql:5432 2>&1 | grep -q ""; do sleep 2; done
+            echo "PostgreSQL ready"
     resources:
       requests:
         cpu: 50m
