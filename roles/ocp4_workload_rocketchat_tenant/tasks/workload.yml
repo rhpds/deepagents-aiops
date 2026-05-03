@@ -47,6 +47,8 @@
     chart_ref: "{{ ocp4_workload_rocketchat_tenant_helm_repo_name }}/{{ ocp4_workload_rocketchat_tenant_helm_chart }}"
     release_namespace: "{{ ocp4_workload_rocketchat_tenant_namespace }}"
     values:
+      global:
+        imageRegistry: quay.io/rhpds
       image:
         repository: "{{ ocp4_workload_rocketchat_tenant_image }}"
         tag: "{{ ocp4_workload_rocketchat_tenant_image_tag }}"
@@ -121,8 +123,6 @@
       mongodb:
         enabled: true
         initdbScriptsConfigMap: ""
-        global:
-          imageRegistry: quay.io/rhpds
         image:
           registry: quay.io
           repository: rhpds/mongodb
