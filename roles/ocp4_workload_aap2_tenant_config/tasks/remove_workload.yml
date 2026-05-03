@@ -63,6 +63,7 @@
         controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      ignore_errors: true
 
     - name: Remove inventory
       ansible.controller.inventory:
@@ -73,6 +74,7 @@
         controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      ignore_errors: true
 
     - name: Remove machine credential
       ansible.controller.credential:
@@ -84,6 +86,7 @@
         controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      ignore_errors: true
 
     - name: Remove backdoor credential
       ansible.controller.credential:
@@ -107,6 +110,7 @@
         controller_username: "{{ _ocp4_workload_aap2_tenant_config_controller_username }}"
         controller_password: "{{ _ocp4_workload_aap2_tenant_config_controller_password }}"
         validate_certs: "{{ ocp4_workload_aap2_tenant_config_validate_certs }}"
+      ignore_errors: true
 
     - name: Look up user ID for deletion
       ansible.builtin.uri:
