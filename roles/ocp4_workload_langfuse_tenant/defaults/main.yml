@@ -18,7 +18,7 @@ ocp4_workload_langfuse_tenant_release_name: langfuse
 # LangFuse configuration
 ocp4_workload_langfuse_tenant_salt: "{{ common_password | default('langfuse-salt') }}"
 ocp4_workload_langfuse_tenant_nextauth_secret: "{{ common_password | default('langfuse-nextauth') }}"
-ocp4_workload_langfuse_tenant_encryption_key: "{{ common_password | default('langfuse-encryption-key-32chars!!') }}"
+ocp4_workload_langfuse_tenant_encryption_key: "{{ lookup('password', '/dev/null length=64 chars=abcdef0123456789') }}"
 
 # PostgreSQL (bundled with the Helm chart)
 ocp4_workload_langfuse_tenant_postgres_password: "{{ common_password | default('langfuse') }}"
