@@ -6,10 +6,6 @@ langfuse:
     image:
       repository: quay.io/rhpds/langfuse
       tag: "3.171.0"
-  worker:
-    image:
-      repository: quay.io/rhpds/langfuse-worker
-      tag: "3.171.0"
   salt:
     value: "{{ ocp4_workload_langfuse_tenant_salt }}"
   nextauth:
@@ -56,6 +52,9 @@ langfuse:
       cpu: "1"
       memory: 2Gi
   worker:
+    image:
+      repository: quay.io/rhpds/langfuse-worker
+      tag: "3.171.0"
     extraInitContainers:
       - name: wait-for-postgres
         image: quay.io/rhpds/langfuse:3.171.0
