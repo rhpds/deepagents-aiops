@@ -18,11 +18,11 @@ langfuse:
       name: athena
   resources:
     requests:
-      cpu: 50m
-      memory: 256Mi
-    limits:
-      cpu: 500m
+      cpu: 100m
       memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
   worker:
     resources:
       requests:
