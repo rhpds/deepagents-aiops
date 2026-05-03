@@ -70,6 +70,20 @@
             registry: quay.io
             repository: rhpds/prometheus-nats-exporter
             tag: "0.18.0"
+      extraInitContainers:
+        - name: wait-for-mongodb
+          image: quay.io/rhpds/mongodb:6.0.10-debian-11-r8
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "Waiting for MongoDB to accept connections..."
+              until mongosh --host rocketchat-mongodb --username root --password $MONGODB_ROOT_PASSWORD --eval "db.adminCommand('ping')" 2>/dev/null; do
+                sleep 3
+              done
+              echo "MongoDB is ready"
+          env:
+            - name: MONGODB_ROOT_PASSWORD
+              value: "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
       microservices:
         enabled: false
       persistence:
