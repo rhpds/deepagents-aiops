@@ -76,14 +76,15 @@
           command: ["sh", "-c"]
           args:
             - |
-              echo "Waiting for MongoDB to accept connections..."
-              until mongosh --host rocketchat-mongodb --username root --password $MONGODB_ROOT_PASSWORD --eval "db.adminCommand('ping')" 2>/dev/null; do
-                sleep 3
+              echo "Waiting for MongoDB rocketchat database..."
+              until mongosh "mongodb://rocketchat:${MONGODB_PASSWORD}@rocketchat-mongodb:27017/rocketchat" --eval "db.stats()" 2>/dev/null; do
+                echo "  retrying in 5s..."
+                sleep 5
               done
-              sleep 10
-              echo "MongoDB is ready"
+              sleep 5
+              echo "MongoDB rocketchat database is ready"
           env:
-            - name: MONGODB_ROOT_PASSWORD
+            - name: MONGODB_PASSWORD
               value: "{{ ocp4_workload_rocketchat_tenant_mongodb_password }}"
       microservices:
         enabled: false
