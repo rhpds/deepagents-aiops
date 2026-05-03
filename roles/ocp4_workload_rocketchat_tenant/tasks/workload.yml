@@ -121,6 +121,8 @@
       mongodb:
         enabled: true
         initdbScriptsConfigMap: ""
+        global:
+          imageRegistry: quay.io/rhpds
         image:
           registry: quay.io
           repository: rhpds/mongodb
