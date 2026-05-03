@@ -40,5 +40,5 @@ ocp4_workload_rocketchat_tenant_route_name: rocketchat
 # Retry configuration
 ocp4_workload_rocketchat_tenant_deploy_retries: 60
 ocp4_workload_rocketchat_tenant_deploy_retry_delay: 10
-ocp4_workload_rocketchat_tenant_api_retries: 10
-ocp4_workload_rocketchat_tenant_api_retry_delay: 5
+ocp4_workload_rocketchat_tenant_api_retries: 30
+ocp4_workload_rocketchat_tenant_api_retry_delay: 10
