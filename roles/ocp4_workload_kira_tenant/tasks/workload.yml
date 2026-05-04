@@ -158,41 +158,64 @@
     - r_kira_api_pod.resources | length > 0
     - r_kira_api_pod.resources[0].status.containerStatuses[0].ready | default(false)
 
-- name: Fix alembic.ini to use correct database URL
+- name: Run Kira database setup (alembic + seed)
   when: r_kira_api_pod.resources | length > 0
-  kubernetes.core.k8s_exec:
-    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
-    pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
-    command: >-
-      sed -i 's|sqlalchemy.url = .*|sqlalchemy.url = postgresql://kira:{{ ocp4_workload_kira_tenant_postgres_password }}@postgres:5432/kira|' /app/alembic.ini
-  register: r_alembic_fix
-  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
-  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
-  until: r_alembic_fix is succeeded
+  block:
+    - name: Fix alembic.ini to use correct database URL
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+        command: >-
+          sed -i 's|sqlalchemy.url = .*|sqlalchemy.url = postgresql://kira:{{ ocp4_workload_kira_tenant_postgres_password }}@postgres:5432/kira|' /app/alembic.ini
 
-- name: Run Kira database migration
-  when: r_kira_api_pod.resources | length > 0
-  kubernetes.core.k8s_exec:
-    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
-    pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
-    command: uv run alembic upgrade head
-  register: r_migration
-  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
-  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
-  until: r_migration is succeeded
-  ignore_errors: true
+    - name: Run Kira database migration
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+        command: uv run alembic upgrade head
 
-- name: Seed Kira database with default users
-  when: r_kira_api_pod.resources | length > 0
-  kubernetes.core.k8s_exec:
-    namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
-    pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
-    command: uv run python -m api.seed
-  register: r_seed
-  retries: "{{ ocp4_workload_kira_tenant_migration_retries }}"
-  delay: "{{ ocp4_workload_kira_tenant_migration_retry_delay }}"
-  until: r_seed is succeeded
-  ignore_errors: true
+    - name: Seed Kira database with default users
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+        command: uv run python -m api.seed
+
+  rescue:
+    - name: Re-lookup Kira API pod (previous pod was rescheduled)
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        label_selectors:
+          - "app.kubernetes.io/component=api"
+          - "app.kubernetes.io/instance=kira"
+        field_selectors:
+          - "status.phase=Running"
+      register: r_kira_api_pod
+      retries: 30
+      delay: 10
+      until:
+        - r_kira_api_pod.resources | length > 0
+        - r_kira_api_pod.resources[0].status.containerStatuses[0].ready | default(false)
+
+    - name: Fix alembic.ini (retry with new pod)
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+        command: >-
+          sed -i 's|sqlalchemy.url = .*|sqlalchemy.url = postgresql://kira:{{ ocp4_workload_kira_tenant_postgres_password }}@postgres:5432/kira|' /app/alembic.ini
+
+    - name: Run Kira database migration (retry with new pod)
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+        command: uv run alembic upgrade head
+
+    - name: Seed Kira database (retry with new pod)
+      kubernetes.core.k8s_exec:
+        namespace: "{{ ocp4_workload_kira_tenant_namespace }}"
+        pod: "{{ r_kira_api_pod.resources[0].metadata.name }}"
+        command: uv run python -m api.seed
 
 # -------------------------------------------------------------------
 # 8. Create per-tenant Kira user directly in the database
