@@ -151,12 +151,16 @@
       - "app.kubernetes.io/instance=kira"
     field_selectors:
       - "status.phase=Running"
-  register: r_kira_api_pod
+  register: r_kira_api_pod_raw
   retries: 30
   delay: 10
   until:
-    - r_kira_api_pod.resources | length > 0
-    - r_kira_api_pod.resources[0].status.containerStatuses[0].ready | default(false)
+    - (r_kira_api_pod_raw.resources | rejectattr('metadata.deletionTimestamp', 'defined') | list | length) > 0
+
+- name: Set non-terminating Kira API pod
+  ansible.builtin.set_fact:
+    r_kira_api_pod:
+      resources: "{{ r_kira_api_pod_raw.resources | rejectattr('metadata.deletionTimestamp', 'defined') | list }}"
 
 - name: Run Kira database setup (alembic + seed)
   when: r_kira_api_pod.resources | length > 0
@@ -181,6 +185,10 @@
         command: uv run python -m api.seed
 
   rescue:
+    - name: Wait for old pod to terminate
+      ansible.builtin.pause:
+        seconds: 15
+
     - name: Re-lookup Kira API pod (previous pod was rescheduled)
       kubernetes.core.k8s_info:
         api_version: v1
@@ -191,12 +199,16 @@
           - "app.kubernetes.io/instance=kira"
         field_selectors:
           - "status.phase=Running"
-      register: r_kira_api_pod
+      register: r_kira_api_pod_raw
       retries: 30
       delay: 10
       until:
-        - r_kira_api_pod.resources | length > 0
-        - r_kira_api_pod.resources[0].status.containerStatuses[0].ready | default(false)
+        - (r_kira_api_pod_raw.resources | rejectattr('metadata.deletionTimestamp', 'defined') | list | length) > 0
+
+    - name: Set non-terminating Kira API pod (rescue)
+      ansible.builtin.set_fact:
+        r_kira_api_pod:
+          resources: "{{ r_kira_api_pod_raw.resources | rejectattr('metadata.deletionTimestamp', 'defined') | list }}"
 
     - name: Fix alembic.ini (retry with new pod)
       kubernetes.core.k8s_exec:
