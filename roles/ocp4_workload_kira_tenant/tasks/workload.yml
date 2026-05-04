@@ -139,7 +139,7 @@
 # -------------------------------------------------------------------
 - name: Wait for API pod to stabilize
   ansible.builtin.pause:
-    seconds: 10
+    seconds: 15
 
 - name: Get Kira API pod name
   kubernetes.core.k8s_info:
@@ -152,9 +152,11 @@
     field_selectors:
       - "status.phase=Running"
   register: r_kira_api_pod
-  retries: 5
+  retries: 30
   delay: 10
-  until: r_kira_api_pod.resources | length > 0
+  until:
+    - r_kira_api_pod.resources | length > 0
+    - r_kira_api_pod.resources[0].status.containerStatuses[0].ready | default(false)
 
 - name: Fix alembic.ini to use correct database URL
   when: r_kira_api_pod.resources | length > 0
