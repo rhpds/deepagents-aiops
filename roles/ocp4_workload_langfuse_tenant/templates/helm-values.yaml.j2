@@ -63,6 +63,10 @@ langfuse:
     image:
       repository: quay.io/rhpds/langfuse-worker
       tag: "3.171.0"
+    livenessProbe:
+      initialDelaySeconds: 120
+      periodSeconds: 10
+      failureThreshold: 12
     extraInitContainers:
       - name: wait-for-postgres
         image: quay.io/rhpds/langfuse:3.171.0
