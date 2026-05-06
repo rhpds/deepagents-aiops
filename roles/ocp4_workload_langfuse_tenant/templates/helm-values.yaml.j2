@@ -6,6 +6,14 @@ langfuse:
     image:
       repository: quay.io/rhpds/langfuse
       tag: "3.171.0"
+    livenessProbe:
+      initialDelaySeconds: 120
+      periodSeconds: 10
+      failureThreshold: 12
+    readinessProbe:
+      initialDelaySeconds: 120
+      periodSeconds: 10
+      failureThreshold: 12
   salt:
     value: "{{ ocp4_workload_langfuse_tenant_salt }}"
   nextauth:
@@ -44,14 +52,6 @@ langfuse:
           echo "Waiting for ClickHouse..."
           until wget -qO- http://langfuse-clickhouse:8123/ping 2>/dev/null; do sleep 2; done
           echo "Dependencies ready"
-  livenessProbe:
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    failureThreshold: 12
-  readinessProbe:
-    initialDelaySeconds: 120
-    periodSeconds: 10
-    failureThreshold: 12
   resources:
     requests:
       cpu: 100m
