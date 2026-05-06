@@ -10,7 +10,7 @@ ocp4_workload_langfuse_tenant_namespace: "{{ ocp4_workload_username }}-agentic"
 # Helm chart source (official upstream)
 ocp4_workload_langfuse_tenant_helm_repo_name: langfuse
 ocp4_workload_langfuse_tenant_helm_repo_url: https://langfuse.github.io/langfuse-k8s
-ocp4_workload_langfuse_tenant_helm_chart_version: ""
+ocp4_workload_langfuse_tenant_helm_chart_version: "1.5.28"
 
 # Helm release name
 ocp4_workload_langfuse_tenant_release_name: langfuse

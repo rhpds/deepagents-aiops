@@ -27,6 +27,7 @@
   kubernetes.core.helm:
     name: "{{ ocp4_workload_langfuse_tenant_release_name }}"
     chart_ref: "{{ ocp4_workload_langfuse_tenant_helm_repo_name }}/langfuse"
+    chart_version: "{{ ocp4_workload_langfuse_tenant_helm_chart_version }}"
     release_namespace: "{{ ocp4_workload_langfuse_tenant_namespace }}"
     values_files:
       - /tmp/langfuse-helm-values.yaml
