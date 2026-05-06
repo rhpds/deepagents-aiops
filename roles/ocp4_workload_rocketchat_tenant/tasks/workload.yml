@@ -103,6 +103,11 @@
       mongodb:
         enabled: true
         initdbScriptsConfigMap: ""
+        readinessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 15
+          periodSeconds: 10
+          failureThreshold: 12
         image:
           repository: bitnamilegacy/mongodb
           tag: 6.0.10-debian-11-r8
