@@ -10,7 +10,12 @@ users:
     lock_passwd: false
     plain_text_passwd: {{ ocp4_workload_rhel_vm_tenant_vm_password }}
     shell: /bin/bash
-{% if ocp4_workload_rhel_vm_tenant_vm_init_script_url | default('') | length > 0 %}
+{% if ocp4_workload_rhel_vm_tenant_vm_runcmd | default([]) | length > 0 or ocp4_workload_rhel_vm_tenant_vm_init_script_url | default('') | length > 0 %}
 runcmd:
+{% for cmd in ocp4_workload_rhel_vm_tenant_vm_runcmd | default([]) %}
+  - {{ cmd }}
+{% endfor %}
+{% if ocp4_workload_rhel_vm_tenant_vm_init_script_url | default('') | length > 0 %}
   - curl -sSL {{ ocp4_workload_rhel_vm_tenant_vm_init_script_url }} | bash
+{% endif %}
 {% endif %}
