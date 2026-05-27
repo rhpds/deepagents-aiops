@@ -1,0 +1,15 @@
+---
+# ===================================================================
+# Role: ocp4_workload_mlflow_tenant
+# Creates a per-tenant MLflow experiment on the shared tracking server.
+# ===================================================================
+
+# MLflow tracking server (cluster-wide, deployed by ocp4_workload_mlflow_cluster)
+ocp4_workload_mlflow_tenant_tracking_uri: "http://mlflow.mlflow.svc.cluster.local:5000"
+
+# Experiment name (one per tenant)
+ocp4_workload_mlflow_tenant_experiment_name: "{{ ocp4_workload_username }}-agentic"
+
+# Retry configuration
+ocp4_workload_mlflow_tenant_api_retries: 10
+ocp4_workload_mlflow_tenant_api_retry_delay: 5

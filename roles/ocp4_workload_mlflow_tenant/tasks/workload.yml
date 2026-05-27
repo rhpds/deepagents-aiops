@@ -1,0 +1,39 @@
+---
+# ===================================================================
+# Create per-tenant MLflow experiment on the shared tracking server
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1. Create MLflow experiment via REST API
+# -------------------------------------------------------------------
+- name: Create MLflow experiment for tenant
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/create"
+    method: POST
+    body_format: json
+    body:
+      name: "{{ ocp4_workload_mlflow_tenant_experiment_name }}"
+    status_code:
+      - 200
+      - 400
+    validate_certs: false
+  register: r_mlflow_experiment
+  retries: "{{ ocp4_workload_mlflow_tenant_api_retries }}"
+  delay: "{{ ocp4_workload_mlflow_tenant_api_retry_delay }}"
+  until: r_mlflow_experiment is succeeded
+  changed_when: r_mlflow_experiment.status == 200
+
+- name: Log MLflow experiment creation
+  ansible.builtin.debug:
+    msg: >-
+      MLflow experiment '{{ ocp4_workload_mlflow_tenant_experiment_name }}'
+      {{ 'created' if r_mlflow_experiment.status == 200 else 'already exists' }}
+
+# -------------------------------------------------------------------
+# 2. Save connection info for downstream roles
+# -------------------------------------------------------------------
+- name: Save MLflow tenant info to agnosticd_user_info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      mlflow_tracking_uri: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}"
+      mlflow_experiment_name: "{{ ocp4_workload_mlflow_tenant_experiment_name }}"

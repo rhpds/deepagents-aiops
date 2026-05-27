@@ -1,0 +1,21 @@
+---
+# MLflow experiments cannot be permanently deleted via API (only soft-deleted).
+# The shared server cleanup happens in ocp4_workload_mlflow_cluster remove.
+- name: Delete MLflow experiment for tenant (soft delete)
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/delete"
+    method: POST
+    body_format: json
+    body:
+      experiment_id: "{{ r_experiment_id.json.experiment.experiment_id }}"
+    status_code:
+      - 200
+      - 404
+    validate_certs: false
+  when: r_experiment_id is defined and r_experiment_id.json.experiment is defined
+  ignore_errors: true
+  register: r_delete_experiment
+
+- name: Log MLflow experiment cleanup
+  ansible.builtin.debug:
+    msg: "MLflow experiment cleanup for tenant {{ ocp4_workload_mlflow_tenant_experiment_name }} — soft delete attempted"
