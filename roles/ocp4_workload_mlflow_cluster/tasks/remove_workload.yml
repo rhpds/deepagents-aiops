@@ -1,0 +1,22 @@
+---
+- name: Remove MLflow Helm release
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_mlflow_cluster_release_name }}"
+    release_namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+    state: absent
+    wait: true
+
+- name: Remove MLflow route
+  kubernetes.core.k8s:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: mlflow
+    namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+    state: absent
+
+- name: Remove MLflow namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+    state: absent

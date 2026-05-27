@@ -1,0 +1,29 @@
+---
+# ===================================================================
+# Role: ocp4_workload_mlflow_cluster
+# Deploys a shared MLflow tracking server cluster-wide via Helm.
+# ===================================================================
+
+# Target namespace (cluster-scoped, shared by all tenants)
+ocp4_workload_mlflow_cluster_namespace: mlflow
+
+# Helm chart source (community-charts)
+ocp4_workload_mlflow_cluster_helm_repo_name: community-charts
+ocp4_workload_mlflow_cluster_helm_repo_url: https://community-charts.github.io/helm-charts
+ocp4_workload_mlflow_cluster_helm_chart_version: "1.8.1"
+
+# Helm release name
+ocp4_workload_mlflow_cluster_release_name: mlflow
+
+# PostgreSQL backend
+ocp4_workload_mlflow_cluster_postgres_password: "{{ common_admin_password | default('mlflow-pg') }}"
+
+# Resource limits
+ocp4_workload_mlflow_cluster_memory_limit: 1Gi
+ocp4_workload_mlflow_cluster_memory_request: 256Mi
+ocp4_workload_mlflow_cluster_cpu_limit: "1"
+ocp4_workload_mlflow_cluster_cpu_request: 100m
+
+# Retry configuration
+ocp4_workload_mlflow_cluster_deploy_retries: 60
+ocp4_workload_mlflow_cluster_deploy_retry_delay: 10

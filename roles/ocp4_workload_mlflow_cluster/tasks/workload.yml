@@ -1,0 +1,131 @@
+---
+# ===================================================================
+# Deploy shared MLflow tracking server via community Helm chart
+# ===================================================================
+
+# -------------------------------------------------------------------
+# 1. Create namespace
+# -------------------------------------------------------------------
+- name: Create MLflow namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+
+# -------------------------------------------------------------------
+# 2. Add Helm repo
+# -------------------------------------------------------------------
+- name: Add community-charts Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ ocp4_workload_mlflow_cluster_helm_repo_name }}"
+    repo_url: "{{ ocp4_workload_mlflow_cluster_helm_repo_url }}"
+
+# -------------------------------------------------------------------
+# 3. Deploy MLflow via Helm
+# -------------------------------------------------------------------
+- name: Deploy MLflow via Helm
+  kubernetes.core.helm:
+    name: "{{ ocp4_workload_mlflow_cluster_release_name }}"
+    chart_ref: "{{ ocp4_workload_mlflow_cluster_helm_repo_name }}/mlflow"
+    chart_version: "{{ ocp4_workload_mlflow_cluster_helm_chart_version }}"
+    release_namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+    values:
+      backendStore:
+        postgres:
+          enabled: true
+          password: "{{ ocp4_workload_mlflow_cluster_postgres_password }}"
+      artifactRoot:
+        proxiedArtifactStorage: true
+      resources:
+        requests:
+          cpu: "{{ ocp4_workload_mlflow_cluster_cpu_request }}"
+          memory: "{{ ocp4_workload_mlflow_cluster_memory_request }}"
+        limits:
+          cpu: "{{ ocp4_workload_mlflow_cluster_cpu_limit }}"
+          memory: "{{ ocp4_workload_mlflow_cluster_memory_limit }}"
+      serviceMonitor:
+        enabled: false
+    state: present
+    wait: false
+
+# -------------------------------------------------------------------
+# 4. Create OpenShift Route for MLflow UI
+# -------------------------------------------------------------------
+- name: Create MLflow route
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: route.openshift.io/v1
+      kind: Route
+      metadata:
+        name: mlflow
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+      spec:
+        to:
+          kind: Service
+          name: "{{ ocp4_workload_mlflow_cluster_release_name }}"
+          weight: 100
+        port:
+          targetPort: http
+        tls:
+          termination: edge
+          insecureEdgeTerminationPolicy: Redirect
+
+# -------------------------------------------------------------------
+# 5. Wait for MLflow deployment to be ready
+# -------------------------------------------------------------------
+- name: Wait for MLflow deployment to be available
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ ocp4_workload_mlflow_cluster_release_name }}"
+    namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+  register: r_mlflow_deploy
+  retries: "{{ ocp4_workload_mlflow_cluster_deploy_retries }}"
+  delay: "{{ ocp4_workload_mlflow_cluster_deploy_retry_delay }}"
+  until:
+    - r_mlflow_deploy.resources | length > 0
+    - r_mlflow_deploy.resources[0].status.readyReplicas is defined
+    - r_mlflow_deploy.resources[0].status.readyReplicas >= 1
+
+# -------------------------------------------------------------------
+# 6. Discover MLflow route URL
+# -------------------------------------------------------------------
+- name: Get MLflow route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: mlflow
+    namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+  register: r_mlflow_route
+
+- name: Set MLflow URL facts
+  ansible.builtin.set_fact:
+    _ocp4_workload_mlflow_cluster_url: "https://{{ r_mlflow_route.resources[0].spec.host }}"
+    _ocp4_workload_mlflow_cluster_internal_url: "http://{{ ocp4_workload_mlflow_cluster_release_name }}.{{ ocp4_workload_mlflow_cluster_namespace }}.svc.cluster.local:5000"
+
+# -------------------------------------------------------------------
+# 7. Verify MLflow API is responsive
+# -------------------------------------------------------------------
+- name: Wait for MLflow API to be responsive
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_mlflow_cluster_url }}/health"
+    method: GET
+    validate_certs: false
+    status_code: 200
+  register: r_mlflow_health
+  retries: 30
+  delay: 10
+  until: r_mlflow_health is succeeded
+
+# -------------------------------------------------------------------
+# 8. Save connection info
+# -------------------------------------------------------------------
+- name: Save MLflow connection info
+  agnosticd.core.agnosticd_user_info:
+    data:
+      mlflow_url: "{{ _ocp4_workload_mlflow_cluster_url }}"
+      mlflow_internal_url: "{{ _ocp4_workload_mlflow_cluster_internal_url }}"
