@@ -57,3 +57,9 @@ langfuse:
   publicKey: "{{ ocp4_workload_athena_tenant_langfuse_public_key }}"
   host: "{{ ocp4_workload_athena_tenant_langfuse_host }}"
 {% endif %}
+
+{% if ocp4_workload_athena_tenant_mlflow_tracking_uri | default('') | length > 0 %}
+mlflow:
+  trackingUri: "{{ ocp4_workload_athena_tenant_mlflow_tracking_uri }}"
+  experimentName: "{{ ocp4_workload_athena_tenant_mlflow_experiment_name }}"
+{% endif %}
