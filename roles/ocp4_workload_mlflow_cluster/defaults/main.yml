@@ -15,8 +15,10 @@ ocp4_workload_mlflow_cluster_helm_chart_version: "1.8.1"
 # Helm release name
 ocp4_workload_mlflow_cluster_release_name: mlflow
 
-# PostgreSQL backend
+# PostgreSQL backend (Bitnami subchart)
+ocp4_workload_mlflow_cluster_postgres_user: mlflow
 ocp4_workload_mlflow_cluster_postgres_password: "{{ common_admin_password | default('mlflow-pg') }}"
+ocp4_workload_mlflow_cluster_postgres_database: mlflow
 
 # Resource limits
 ocp4_workload_mlflow_cluster_memory_limit: 1Gi

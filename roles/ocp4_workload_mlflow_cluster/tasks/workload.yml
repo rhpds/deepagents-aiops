@@ -34,11 +34,15 @@
     release_namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
     values:
       backendStore:
-        postgres:
-          enabled: true
-          password: "{{ ocp4_workload_mlflow_cluster_postgres_password }}"
+        databaseConnectionCheck: true
       artifactRoot:
         proxiedArtifactStorage: true
+      postgresql:
+        enabled: true
+        auth:
+          username: "{{ ocp4_workload_mlflow_cluster_postgres_user }}"
+          password: "{{ ocp4_workload_mlflow_cluster_postgres_password }}"
+          database: "{{ ocp4_workload_mlflow_cluster_postgres_database }}"
       resources:
         requests:
           cpu: "{{ ocp4_workload_mlflow_cluster_cpu_request }}"
