@@ -27,6 +27,11 @@
       metadata:
         name: mlflow
         namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: Helm
+        annotations:
+          meta.helm.sh/release-name: "{{ ocp4_workload_mlflow_cluster_release_name }}"
+          meta.helm.sh/release-namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 - name: Pre-create MLflow PostgreSQL service account
   kubernetes.core.k8s:
@@ -37,6 +42,11 @@
       metadata:
         name: mlflow-postgresql
         namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: Helm
+        annotations:
+          meta.helm.sh/release-name: "{{ ocp4_workload_mlflow_cluster_release_name }}"
+          meta.helm.sh/release-namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
 # 3. Grant anyuid SCC to MLflow service account
@@ -71,7 +81,7 @@
     repo_url: "{{ ocp4_workload_mlflow_cluster_helm_repo_url }}"
 
 # -------------------------------------------------------------------
-# 3. Deploy MLflow via Helm
+# 5. Deploy MLflow via Helm
 # -------------------------------------------------------------------
 - name: Deploy MLflow via Helm
   kubernetes.core.helm:
@@ -103,7 +113,7 @@
     wait: false
 
 # -------------------------------------------------------------------
-# 4. Create OpenShift Route for MLflow UI
+# 6. Create OpenShift Route for MLflow UI
 # -------------------------------------------------------------------
 - name: Create MLflow route
   kubernetes.core.k8s:
@@ -126,7 +136,7 @@
           insecureEdgeTerminationPolicy: Redirect
 
 # -------------------------------------------------------------------
-# 5. Wait for MLflow deployment to be ready
+# 7. Wait for MLflow deployment to be ready
 # -------------------------------------------------------------------
 - name: Wait for MLflow deployment to be available
   kubernetes.core.k8s_info:
@@ -143,7 +153,7 @@
     - r_mlflow_deploy.resources[0].status.readyReplicas >= 1
 
 # -------------------------------------------------------------------
-# 6. Discover MLflow route URL
+# 8. Discover MLflow route URL
 # -------------------------------------------------------------------
 - name: Get MLflow route
   kubernetes.core.k8s_info:
@@ -159,7 +169,7 @@
     _ocp4_workload_mlflow_cluster_internal_url: "http://{{ ocp4_workload_mlflow_cluster_release_name }}.{{ ocp4_workload_mlflow_cluster_namespace }}.svc.cluster.local:5000"
 
 # -------------------------------------------------------------------
-# 7. Verify MLflow API is responsive
+# 9. Verify MLflow API is responsive
 # -------------------------------------------------------------------
 - name: Wait for MLflow API to be responsive
   ansible.builtin.uri:
@@ -173,7 +183,7 @@
   until: r_mlflow_health is succeeded
 
 # -------------------------------------------------------------------
-# 8. Save connection info
+# 10. Save connection info
 # -------------------------------------------------------------------
 - name: Save MLflow connection info
   agnosticd.core.agnosticd_user_info:

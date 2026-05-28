@@ -23,7 +23,7 @@ ocp4_workload_mlflow_cluster_postgres_database: mlflow
 # Resource limits
 ocp4_workload_mlflow_cluster_memory_limit: 1Gi
 ocp4_workload_mlflow_cluster_memory_request: 256Mi
-ocp4_workload_mlflow_cluster_cpu_limit: "1"
+ocp4_workload_mlflow_cluster_cpu_limit: "1000m"
 ocp4_workload_mlflow_cluster_cpu_request: 100m
 
 # Retry configuration
