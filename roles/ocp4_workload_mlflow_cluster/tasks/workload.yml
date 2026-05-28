@@ -16,7 +16,54 @@
         name: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
-# 2. Add Helm repo
+# 2. Pre-create service accounts for SCC binding
+# -------------------------------------------------------------------
+- name: Pre-create MLflow service account
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: mlflow
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+
+- name: Pre-create MLflow PostgreSQL service account
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: mlflow-postgresql
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+
+# -------------------------------------------------------------------
+# 3. Grant anyuid SCC to MLflow service account
+#    Chart hardcodes runAsUser: 1001 / fsGroup: 1001
+# -------------------------------------------------------------------
+- name: Grant anyuid SCC to MLflow service account
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: "mlflow-anyuid"
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:openshift:scc:anyuid
+      subjects:
+        - kind: ServiceAccount
+          name: mlflow
+          namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+        - kind: ServiceAccount
+          name: mlflow-postgresql
+          namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+
+# -------------------------------------------------------------------
+# 4. Add Helm repo
 # -------------------------------------------------------------------
 - name: Add community-charts Helm repository
   kubernetes.core.helm_repository:
