@@ -168,7 +168,7 @@
 - name: Set MLflow URL facts
   ansible.builtin.set_fact:
     _ocp4_workload_mlflow_cluster_url: "https://{{ r_mlflow_route.resources[0].spec.host }}"
-    _ocp4_workload_mlflow_cluster_internal_url: "http://{{ ocp4_workload_mlflow_cluster_release_name }}.{{ ocp4_workload_mlflow_cluster_namespace }}.svc.cluster.local:5000"
+    _ocp4_workload_mlflow_cluster_internal_url: "http://{{ ocp4_workload_mlflow_cluster_release_name }}.{{ ocp4_workload_mlflow_cluster_namespace }}.svc.cluster.local"
 
 # -------------------------------------------------------------------
 # 9. Verify MLflow API is responsive
