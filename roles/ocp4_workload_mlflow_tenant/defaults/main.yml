@@ -4,8 +4,8 @@
 # Creates a per-tenant MLflow experiment on the shared tracking server.
 # ===================================================================
 
-# MLflow tracking server (cluster-wide, deployed by ocp4_workload_mlflow_cluster)
-ocp4_workload_mlflow_tenant_tracking_uri: "http://mlflow.mlflow.svc.cluster.local:5000"
+# MLflow tracking server route (deployer runs outside the cluster)
+ocp4_workload_mlflow_tenant_tracking_uri: "https://mlflow-mlflow.{{ openshift_cluster_ingress_domain }}"
 
 # Experiment name (one per tenant)
 ocp4_workload_mlflow_tenant_experiment_name: "{{ ocp4_workload_username }}-agentic"
