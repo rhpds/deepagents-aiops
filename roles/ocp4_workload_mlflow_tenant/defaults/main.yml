@@ -13,11 +13,3 @@ ocp4_workload_mlflow_tenant_experiment_name: "{{ ocp4_workload_username }}-agent
 # Retry configuration
 ocp4_workload_mlflow_tenant_api_retries: 10
 ocp4_workload_mlflow_tenant_api_retry_delay: 5
-
-# Admin credentials secret (created by ocp4_workload_mlflow_cluster)
-ocp4_workload_mlflow_tenant_admin_secret: mlflow-admin-credentials
-ocp4_workload_mlflow_tenant_admin_namespace: mlflow
-
-# Tenant user
-ocp4_workload_mlflow_tenant_username: "user-{{ guid }}"
-ocp4_workload_mlflow_tenant_password: "{{ common_password | default('openshift') }}"

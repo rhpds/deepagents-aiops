@@ -30,6 +30,5 @@ ocp4_workload_mlflow_cluster_cpu_request: 100m
 ocp4_workload_mlflow_cluster_deploy_retries: 60
 ocp4_workload_mlflow_cluster_deploy_retry_delay: 10
 
-# Authentication (basic-auth)
-ocp4_workload_mlflow_cluster_admin_username: admin
-ocp4_workload_mlflow_cluster_admin_password: "{{ common_admin_password | default('mlflow-admin') }}"
+# OAuth proxy sidecar
+ocp4_workload_mlflow_cluster_oauth_proxy_image: "quay.io/openshift/origin-oauth-proxy:latest"

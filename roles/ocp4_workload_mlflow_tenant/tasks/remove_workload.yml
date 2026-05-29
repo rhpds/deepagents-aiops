@@ -3,42 +3,17 @@
 # The shared server cleanup happens in ocp4_workload_mlflow_cluster remove.
 
 # -------------------------------------------------------------------
-# 0. Read admin credentials from cluster secret
-# -------------------------------------------------------------------
-- name: Get MLflow admin credentials secret
-  kubernetes.core.k8s_info:
-    api_version: v1
-    kind: Secret
-    name: "{{ ocp4_workload_mlflow_tenant_admin_secret }}"
-    namespace: "{{ ocp4_workload_mlflow_tenant_admin_namespace }}"
-  register: r_mlflow_admin_secret
-  ignore_errors: true
-
-- name: Extract MLflow admin credentials
-  ansible.builtin.set_fact:
-    _ocp4_workload_mlflow_tenant_admin_username: >-
-      {{ r_mlflow_admin_secret.resources[0].data.username | b64decode }}
-    _ocp4_workload_mlflow_tenant_admin_password: >-
-      {{ r_mlflow_admin_secret.resources[0].data.password | b64decode }}
-  when: r_mlflow_admin_secret.resources | default([]) | length > 0
-  no_log: true
-
-# -------------------------------------------------------------------
 # 1. Look up experiment
 # -------------------------------------------------------------------
 - name: Look up MLflow experiment by name
   ansible.builtin.uri:
     url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/get-by-name?experiment_name={{ ocp4_workload_mlflow_tenant_experiment_name | urlencode }}"
     method: GET
-    force_basic_auth: true
-    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 404
     validate_certs: false
   register: r_experiment_lookup
-  when: _ocp4_workload_mlflow_tenant_admin_password is defined
   ignore_errors: true
 
 # -------------------------------------------------------------------
@@ -51,36 +26,15 @@
     body_format: json
     body:
       experiment_id: "{{ r_experiment_lookup.json.experiment.experiment_id }}"
-    force_basic_auth: true
-    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 404
     validate_certs: false
   when:
-    - _ocp4_workload_mlflow_tenant_admin_password is defined
     - r_experiment_lookup is succeeded
     - r_experiment_lookup.status == 200
   ignore_errors: true
 
-# -------------------------------------------------------------------
-# 3. Delete tenant user
-# -------------------------------------------------------------------
-- name: Delete MLflow tenant user
-  ansible.builtin.uri:
-    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/users/delete?username={{ ocp4_workload_mlflow_tenant_username | urlencode }}"
-    method: DELETE
-    force_basic_auth: true
-    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
-    status_code:
-      - 200
-      - 404
-    validate_certs: false
-  when: _ocp4_workload_mlflow_tenant_admin_password is defined
-  ignore_errors: true
-
 - name: Log MLflow experiment cleanup
   ansible.builtin.debug:
-    msg: "MLflow cleanup for tenant {{ ocp4_workload_mlflow_tenant_experiment_name }} — experiment soft-deleted, user deleted"
+    msg: "MLflow cleanup for tenant {{ ocp4_workload_mlflow_tenant_experiment_name }} — experiment soft-deleted"
