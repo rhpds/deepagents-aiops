@@ -107,8 +107,8 @@
         limits:
           cpu: "{{ ocp4_workload_mlflow_cluster_cpu_limit }}"
           memory: "{{ ocp4_workload_mlflow_cluster_memory_limit }}"
-      extraArgs:
-        allowedHosts: "all"
+      extraEnvVars:
+        MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE: "true"
       serviceMonitor:
         enabled: false
     state: present
