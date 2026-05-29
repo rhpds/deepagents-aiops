@@ -218,7 +218,24 @@
   until: r_mlflow_health is succeeded
 
 # -------------------------------------------------------------------
-# 9b. Verify MLflow auth is operational
+# 9b. Save admin credentials as Secret for tenant roles
+# -------------------------------------------------------------------
+- name: Create MLflow admin credentials secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: mlflow-admin-credentials
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+      type: Opaque
+      stringData:
+        username: "{{ ocp4_workload_mlflow_cluster_admin_username }}"
+        password: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
+
+# -------------------------------------------------------------------
+# 9c. Verify MLflow auth is operational
 # -------------------------------------------------------------------
 - name: Verify MLflow basic auth is operational
   ansible.builtin.uri:

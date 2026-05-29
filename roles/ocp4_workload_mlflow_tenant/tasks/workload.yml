@@ -4,6 +4,34 @@
 # ===================================================================
 
 # -------------------------------------------------------------------
+# 0. Read admin credentials from cluster secret
+# -------------------------------------------------------------------
+- name: Get MLflow admin credentials secret
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ ocp4_workload_mlflow_tenant_admin_secret }}"
+    namespace: "{{ ocp4_workload_mlflow_tenant_admin_namespace }}"
+  register: r_mlflow_admin_secret
+
+- name: Assert MLflow admin credentials secret exists
+  ansible.builtin.assert:
+    that:
+      - r_mlflow_admin_secret.resources | length > 0
+    fail_msg: >-
+      MLflow admin credentials secret '{{ ocp4_workload_mlflow_tenant_admin_secret }}'
+      not found in namespace '{{ ocp4_workload_mlflow_tenant_admin_namespace }}'.
+      Ensure ocp4_workload_mlflow_cluster ran first.
+
+- name: Extract MLflow admin credentials
+  ansible.builtin.set_fact:
+    _ocp4_workload_mlflow_tenant_admin_username: >-
+      {{ r_mlflow_admin_secret.resources[0].data.username | b64decode }}
+    _ocp4_workload_mlflow_tenant_admin_password: >-
+      {{ r_mlflow_admin_secret.resources[0].data.password | b64decode }}
+  no_log: true
+
+# -------------------------------------------------------------------
 # 1. Create MLflow experiment via REST API (authenticated as admin)
 # -------------------------------------------------------------------
 - name: Create MLflow experiment for tenant
@@ -14,8 +42,8 @@
     body:
       name: "{{ ocp4_workload_mlflow_tenant_experiment_name }}"
     force_basic_auth: true
-    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 400
@@ -40,8 +68,8 @@
     url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/get-by-name?experiment_name={{ ocp4_workload_mlflow_tenant_experiment_name | urlencode }}"
     method: GET
     force_basic_auth: true
-    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
     status_code: 200
     validate_certs: false
   register: r_experiment_lookup
@@ -62,8 +90,8 @@
       username: "{{ ocp4_workload_mlflow_tenant_username }}"
       password: "{{ ocp4_workload_mlflow_tenant_password }}"
     force_basic_auth: true
-    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 409
@@ -90,8 +118,8 @@
       username: "{{ ocp4_workload_mlflow_tenant_username }}"
       permission: MANAGE
     force_basic_auth: true
-    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
-    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    url_username: "{{ _ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ _ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 409
