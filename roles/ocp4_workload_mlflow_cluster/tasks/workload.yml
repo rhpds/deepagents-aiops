@@ -16,6 +16,27 @@
         name: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
+# 1b. Create auth configuration ConfigMap
+# -------------------------------------------------------------------
+- name: Create MLflow auth config
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: mlflow-auth-config
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+      data:
+        auth_config.ini: |
+          [mlflow]
+          default_permission = NO_PERMISSIONS
+          database_uri = postgresql://{{ ocp4_workload_mlflow_cluster_postgres_user }}:{{ ocp4_workload_mlflow_cluster_postgres_password }}@mlflow-postgresql:5432/{{ ocp4_workload_mlflow_cluster_postgres_database }}
+          admin_username = {{ ocp4_workload_mlflow_cluster_admin_username }}
+          admin_password = {{ ocp4_workload_mlflow_cluster_admin_password }}
+          authorization_function = mlflow.server.auth:authenticate_request_basic_auth
+
+# -------------------------------------------------------------------
 # 2. Pre-create service accounts for SCC binding
 # -------------------------------------------------------------------
 - name: Pre-create MLflow service account
@@ -107,8 +128,20 @@
         limits:
           cpu: "{{ ocp4_workload_mlflow_cluster_cpu_limit }}"
           memory: "{{ ocp4_workload_mlflow_cluster_memory_limit }}"
+      extraArgs:
+        app-name: basic-auth
       extraEnvVars:
         MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE: "true"
+        MLFLOW_AUTH_CONFIG_PATH: /etc/mlflow/auth_config.ini
+        MLFLOW_FLASK_SERVER_SECRET_KEY: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
+      extraVolumes:
+        - name: auth-config
+          configMap:
+            name: mlflow-auth-config
+      extraVolumeMounts:
+        - name: auth-config
+          mountPath: /etc/mlflow
+          readOnly: true
       serviceMonitor:
         enabled: false
     state: present
@@ -185,6 +218,23 @@
   until: r_mlflow_health is succeeded
 
 # -------------------------------------------------------------------
+# 9b. Verify MLflow auth is operational
+# -------------------------------------------------------------------
+- name: Verify MLflow basic auth is operational
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_mlflow_cluster_url }}/api/2.0/mlflow/users/get?username={{ ocp4_workload_mlflow_cluster_admin_username }}"
+    method: GET
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_cluster_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
+    validate_certs: false
+    status_code: 200
+  register: r_mlflow_auth_check
+  retries: 30
+  delay: 10
+  until: r_mlflow_auth_check is succeeded
+
+# -------------------------------------------------------------------
 # 10. Save connection info
 # -------------------------------------------------------------------
 - name: Save MLflow connection info
@@ -192,3 +242,5 @@
     data:
       mlflow_url: "{{ _ocp4_workload_mlflow_cluster_url }}"
       mlflow_internal_url: "{{ _ocp4_workload_mlflow_cluster_internal_url }}"
+      mlflow_admin_username: "{{ ocp4_workload_mlflow_cluster_admin_username }}"
+      mlflow_admin_password: "{{ ocp4_workload_mlflow_cluster_admin_password }}"

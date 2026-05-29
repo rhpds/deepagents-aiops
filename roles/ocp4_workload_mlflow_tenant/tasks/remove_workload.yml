@@ -2,10 +2,16 @@
 # MLflow experiments cannot be permanently deleted via API (only soft-deleted).
 # The shared server cleanup happens in ocp4_workload_mlflow_cluster remove.
 
+# -------------------------------------------------------------------
+# 1. Look up experiment
+# -------------------------------------------------------------------
 - name: Look up MLflow experiment by name
   ansible.builtin.uri:
     url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/get-by-name?experiment_name={{ ocp4_workload_mlflow_tenant_experiment_name | urlencode }}"
     method: GET
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 404
@@ -13,6 +19,9 @@
   register: r_experiment_lookup
   ignore_errors: true
 
+# -------------------------------------------------------------------
+# 2. Soft-delete experiment
+# -------------------------------------------------------------------
 - name: Delete MLflow experiment for tenant (soft delete)
   ansible.builtin.uri:
     url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/delete"
@@ -20,6 +29,9 @@
     body_format: json
     body:
       experiment_id: "{{ r_experiment_lookup.json.experiment.experiment_id }}"
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 404
@@ -29,6 +41,22 @@
     - r_experiment_lookup.status == 200
   ignore_errors: true
 
+# -------------------------------------------------------------------
+# 3. Delete tenant user
+# -------------------------------------------------------------------
+- name: Delete MLflow tenant user
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/users/delete?username={{ ocp4_workload_mlflow_tenant_username | urlencode }}"
+    method: DELETE
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    status_code:
+      - 200
+      - 404
+    validate_certs: false
+  ignore_errors: true
+
 - name: Log MLflow experiment cleanup
   ansible.builtin.debug:
-    msg: "MLflow experiment cleanup for tenant {{ ocp4_workload_mlflow_tenant_experiment_name }} — soft delete attempted"
+    msg: "MLflow cleanup for tenant {{ ocp4_workload_mlflow_tenant_experiment_name }} — experiment soft-deleted, user deleted"

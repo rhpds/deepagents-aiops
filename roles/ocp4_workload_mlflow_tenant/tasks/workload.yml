@@ -1,10 +1,10 @@
 ---
 # ===================================================================
-# Create per-tenant MLflow experiment on the shared tracking server
+# Create per-tenant MLflow experiment, user, and permissions
 # ===================================================================
 
 # -------------------------------------------------------------------
-# 1. Create MLflow experiment via REST API
+# 1. Create MLflow experiment via REST API (authenticated as admin)
 # -------------------------------------------------------------------
 - name: Create MLflow experiment for tenant
   ansible.builtin.uri:
@@ -13,6 +13,9 @@
     body_format: json
     body:
       name: "{{ ocp4_workload_mlflow_tenant_experiment_name }}"
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
     status_code:
       - 200
       - 400
@@ -30,10 +33,79 @@
       {{ 'created' if r_mlflow_experiment.status == 200 else 'already exists' }}
 
 # -------------------------------------------------------------------
-# 2. Save connection info for downstream roles
+# 2. Look up experiment ID (needed for permission grant)
+# -------------------------------------------------------------------
+- name: Look up MLflow experiment by name
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/get-by-name?experiment_name={{ ocp4_workload_mlflow_tenant_experiment_name | urlencode }}"
+    method: GET
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    status_code: 200
+    validate_certs: false
+  register: r_experiment_lookup
+
+- name: Set experiment ID fact
+  ansible.builtin.set_fact:
+    _ocp4_workload_mlflow_tenant_experiment_id: "{{ r_experiment_lookup.json.experiment.experiment_id }}"
+
+# -------------------------------------------------------------------
+# 3. Create tenant user
+# -------------------------------------------------------------------
+- name: Create MLflow user for tenant
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/users/create"
+    method: POST
+    body_format: json
+    body:
+      username: "{{ ocp4_workload_mlflow_tenant_username }}"
+      password: "{{ ocp4_workload_mlflow_tenant_password }}"
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    status_code:
+      - 200
+      - 409
+    validate_certs: false
+  register: r_mlflow_user
+  changed_when: r_mlflow_user.status == 200
+
+- name: Log MLflow user creation
+  ansible.builtin.debug:
+    msg: >-
+      MLflow user '{{ ocp4_workload_mlflow_tenant_username }}'
+      {{ 'created' if r_mlflow_user.status == 200 else 'already exists' }}
+
+# -------------------------------------------------------------------
+# 4. Grant tenant user MANAGE permission on their experiment
+# -------------------------------------------------------------------
+- name: Grant tenant MANAGE permission on experiment
+  ansible.builtin.uri:
+    url: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}/api/2.0/mlflow/experiments/permissions/create"
+    method: POST
+    body_format: json
+    body:
+      experiment_id: "{{ _ocp4_workload_mlflow_tenant_experiment_id }}"
+      username: "{{ ocp4_workload_mlflow_tenant_username }}"
+      permission: MANAGE
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_tenant_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_tenant_admin_password }}"
+    status_code:
+      - 200
+      - 409
+    validate_certs: false
+  register: r_mlflow_permission
+  changed_when: r_mlflow_permission.status == 200
+
+# -------------------------------------------------------------------
+# 5. Save connection info for downstream roles
 # -------------------------------------------------------------------
 - name: Save MLflow tenant info to agnosticd_user_info
   agnosticd.core.agnosticd_user_info:
     data:
       mlflow_tracking_uri: "{{ ocp4_workload_mlflow_tenant_tracking_uri }}"
       mlflow_experiment_name: "{{ ocp4_workload_mlflow_tenant_experiment_name }}"
+      mlflow_username: "{{ ocp4_workload_mlflow_tenant_username }}"
+      mlflow_password: "{{ ocp4_workload_mlflow_tenant_password }}"
