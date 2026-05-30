@@ -167,6 +167,8 @@
         limits:
           cpu: "{{ ocp4_workload_mlflow_cluster_cpu_limit }}"
           memory: "{{ ocp4_workload_mlflow_cluster_memory_limit }}"
+      extraEnvVars:
+        MLFLOW_SERVER_ALLOWED_HOSTS: "*"
       extraContainers:
         - name: oauth-proxy
           image: "{{ ocp4_workload_mlflow_cluster_oauth_proxy_image }}"
