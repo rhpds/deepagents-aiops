@@ -1,7 +1,7 @@
 ---
 # ===================================================================
 # Deploy shared MLflow tracking server via community Helm chart
-# with OpenShift OAuth proxy sidecar for SSO
+# with OpenShift OAuth proxy sidecar for SSO and per-user permissions
 # ===================================================================
 
 # -------------------------------------------------------------------
@@ -17,7 +17,48 @@
         name: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
-# 2. Pre-create service accounts for SCC binding
+# 2. Create auth configuration ConfigMap
+# -------------------------------------------------------------------
+- name: Create MLflow auth config
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: mlflow-auth-config
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+      data:
+        auth_config.ini: |
+          [mlflow]
+          default_permission = NO_PERMISSIONS
+          database_uri = postgresql://{{ ocp4_workload_mlflow_cluster_postgres_user }}:{{ ocp4_workload_mlflow_cluster_postgres_password }}@mlflow-postgresql:5432/{{ ocp4_workload_mlflow_cluster_postgres_database }}
+          admin_username = {{ ocp4_workload_mlflow_cluster_admin_username }}
+          admin_password = {{ ocp4_workload_mlflow_cluster_admin_password }}
+          authorization_function = proxy_auth:authenticate_request_proxy
+        proxy_auth.py: |
+          """Custom MLflow auth that accepts X-Forwarded-User from OAuth proxy
+          AND Basic Auth from deployer/internal services."""
+
+          def authenticate_request_proxy():
+              from flask import request, Response
+              from werkzeug.datastructures import Authorization
+
+              forwarded_user = request.headers.get("X-Forwarded-User")
+              if forwarded_user:
+                  return Authorization("proxy", {"username": forwarded_user})
+
+              if request.authorization is not None:
+                  from mlflow.server.auth import store
+                  username = request.authorization.username
+                  password = request.authorization.password
+                  if store.authenticate_user(username, password):
+                      return request.authorization
+
+              return Response("Authentication required", 401)
+
+# -------------------------------------------------------------------
+# 3. Pre-create service accounts for SCC binding
 # -------------------------------------------------------------------
 - name: Pre-create MLflow service account
   kubernetes.core.k8s:
@@ -52,7 +93,7 @@
           meta.helm.sh/release-namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
-# 3. Grant anyuid SCC to MLflow service account
+# 4. Grant anyuid SCC to MLflow service account
 #    Chart hardcodes runAsUser: 1001 / fsGroup: 1001
 # -------------------------------------------------------------------
 - name: Grant anyuid SCC to MLflow service account
@@ -76,7 +117,7 @@
           namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
-# 4. Create OAuth proxy cookie secret
+# 5. Create OAuth proxy cookie secret
 # -------------------------------------------------------------------
 - name: Create OAuth proxy cookie secret
   kubernetes.core.k8s:
@@ -92,7 +133,7 @@
         session-secret: "{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') }}"
 
 # -------------------------------------------------------------------
-# 5. Create ClusterRole for OAuth proxy token reviews
+# 6. Create ClusterRole for OAuth proxy token reviews
 # -------------------------------------------------------------------
 - name: Create OAuth proxy ClusterRole
   kubernetes.core.k8s:
@@ -128,7 +169,7 @@
           namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
 
 # -------------------------------------------------------------------
-# 6. Add Helm repo
+# 7. Add Helm repo
 # -------------------------------------------------------------------
 - name: Add community-charts Helm repository
   kubernetes.core.helm_repository:
@@ -136,7 +177,7 @@
     repo_url: "{{ ocp4_workload_mlflow_cluster_helm_repo_url }}"
 
 # -------------------------------------------------------------------
-# 7. Deploy MLflow via Helm (with OAuth proxy sidecar)
+# 8. Deploy MLflow via Helm (OAuth proxy + basic auth permissions)
 # -------------------------------------------------------------------
 - name: Deploy MLflow via Helm
   kubernetes.core.helm:
@@ -167,8 +208,17 @@
         limits:
           cpu: "{{ ocp4_workload_mlflow_cluster_cpu_limit }}"
           memory: "{{ ocp4_workload_mlflow_cluster_memory_limit }}"
+      extraArgs:
+        app-name: basic-auth
       extraEnvVars:
+        MLFLOW_AUTH_CONFIG_PATH: /etc/mlflow/auth_config.ini
+        MLFLOW_FLASK_SERVER_SECRET_KEY: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
         MLFLOW_SERVER_ALLOWED_HOSTS: "*"
+        PYTHONPATH: /etc/mlflow
+      extraVolumeMounts:
+        - name: auth-config
+          mountPath: /etc/mlflow
+          readOnly: true
       extraContainers:
         - name: oauth-proxy
           image: "{{ ocp4_workload_mlflow_cluster_oauth_proxy_image }}"
@@ -200,6 +250,9 @@
               cpu: 200m
               memory: 128Mi
       extraVolumes:
+        - name: auth-config
+          configMap:
+            name: mlflow-auth-config
         - name: proxy-tls
           secret:
             secretName: mlflow-oauth-tls
@@ -212,7 +265,7 @@
     wait: false
 
 # -------------------------------------------------------------------
-# 8. Create OAuth proxy Service (serving-cert auto-generates TLS)
+# 9. Create OAuth proxy Service (serving-cert auto-generates TLS)
 # -------------------------------------------------------------------
 - name: Create OAuth proxy Service
   kubernetes.core.k8s:
@@ -235,7 +288,7 @@
             targetPort: 8443
 
 # -------------------------------------------------------------------
-# 9. Create OpenShift Route (reencrypt via OAuth proxy)
+# 10. Create OpenShift Route (reencrypt via OAuth proxy)
 # -------------------------------------------------------------------
 - name: Create MLflow route
   kubernetes.core.k8s:
@@ -258,7 +311,7 @@
           insecureEdgeTerminationPolicy: Redirect
 
 # -------------------------------------------------------------------
-# 10. Wait for MLflow deployment to be ready
+# 11. Wait for MLflow deployment to be ready
 # -------------------------------------------------------------------
 - name: Wait for MLflow deployment to be available
   kubernetes.core.k8s_info:
@@ -275,7 +328,7 @@
     - r_mlflow_deploy.resources[0].status.readyReplicas >= 1
 
 # -------------------------------------------------------------------
-# 11. Discover MLflow route URL
+# 12. Discover MLflow route URL
 # -------------------------------------------------------------------
 - name: Get MLflow route
   kubernetes.core.k8s_info:
@@ -291,7 +344,7 @@
     _ocp4_workload_mlflow_cluster_internal_url: "http://{{ ocp4_workload_mlflow_cluster_release_name }}.{{ ocp4_workload_mlflow_cluster_namespace }}.svc.cluster.local"
 
 # -------------------------------------------------------------------
-# 12. Verify MLflow API is responsive (health endpoint skips auth)
+# 13. Verify MLflow API is responsive (health endpoint skips auth)
 # -------------------------------------------------------------------
 - name: Wait for MLflow API to be responsive
   ansible.builtin.uri:
@@ -305,10 +358,46 @@
   until: r_mlflow_health is succeeded
 
 # -------------------------------------------------------------------
-# 13. Save connection info
+# 14. Save admin credentials as Secret for tenant roles
+# -------------------------------------------------------------------
+- name: Create MLflow admin credentials secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: mlflow-admin-credentials
+        namespace: "{{ ocp4_workload_mlflow_cluster_namespace }}"
+      type: Opaque
+      stringData:
+        username: "{{ ocp4_workload_mlflow_cluster_admin_username }}"
+        password: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
+
+# -------------------------------------------------------------------
+# 15. Verify MLflow auth is operational
+# -------------------------------------------------------------------
+- name: Verify MLflow basic auth is operational
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_mlflow_cluster_url }}/api/2.0/mlflow/users/get?username={{ ocp4_workload_mlflow_cluster_admin_username }}"
+    method: GET
+    force_basic_auth: true
+    url_username: "{{ ocp4_workload_mlflow_cluster_admin_username }}"
+    url_password: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
+    validate_certs: false
+    status_code: 200
+  register: r_mlflow_auth_check
+  retries: 30
+  delay: 10
+  until: r_mlflow_auth_check is succeeded
+
+# -------------------------------------------------------------------
+# 16. Save connection info
 # -------------------------------------------------------------------
 - name: Save MLflow connection info
   agnosticd.core.agnosticd_user_info:
     data:
       mlflow_url: "{{ _ocp4_workload_mlflow_cluster_url }}"
       mlflow_internal_url: "{{ _ocp4_workload_mlflow_cluster_internal_url }}"
+      mlflow_admin_username: "{{ ocp4_workload_mlflow_cluster_admin_username }}"
+      mlflow_admin_password: "{{ ocp4_workload_mlflow_cluster_admin_password }}"
