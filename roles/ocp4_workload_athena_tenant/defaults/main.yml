@@ -67,5 +67,7 @@ ocp4_workload_athena_tenant_mlflow_password: ""
 # Retry configuration
 ocp4_workload_athena_tenant_deploy_retries: 60
 ocp4_workload_athena_tenant_deploy_retry_delay: 10
-ocp4_workload_athena_tenant_api_retries: 10
-ocp4_workload_athena_tenant_api_retry_delay: 5
+# Rocket.Chat startup (incl. MongoDB replica set init) can take 2-4 min under
+# parallel tenant load; 30x10s = 5 min window prevents spurious login failures.
+ocp4_workload_athena_tenant_api_retries: 30
+ocp4_workload_athena_tenant_api_retry_delay: 10
