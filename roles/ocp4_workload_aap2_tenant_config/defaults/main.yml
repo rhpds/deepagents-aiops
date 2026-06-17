@@ -77,7 +77,7 @@ ocp4_workload_aap2_tenant_config_broken_ee_image: "registry.internal.example.com
 
 # Job templates (provisioned via loop in workload.yml)
 ocp4_workload_aap2_tenant_config_job_templates:
-  - name: "00 RHEL Setup"
+  - name: "RHEL Setup"
     playbook: rhel-setup.yml
     credential: "{{ ocp4_workload_aap2_tenant_config_machine_credential_name }}"
   - name: "01 Ping RHEL VM"
