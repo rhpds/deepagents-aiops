@@ -306,7 +306,7 @@
     status_code:
       - 200
       - 204
-  loop: "{{ r_job_templates.json.results }}"
+  loop: "{{ r_job_templates.json.results | rejectattr('name', 'equalto', 'RHEL Setup') | list }}"
   loop_control:
     loop_var: jt_item
     label: "{{ jt_item.name }}"
