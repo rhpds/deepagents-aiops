@@ -388,6 +388,11 @@
   retries: 20
   delay: 15
 
+- name: Allow MaaS connection to warm up before seed job
+  when: ocp4_workload_athena_tenant_seed_job_enabled | bool
+  ansible.builtin.pause:
+    seconds: 90
+
 - name: Launch seed job to pre-populate Kira
   when: ocp4_workload_athena_tenant_seed_job_enabled | bool
   block:
