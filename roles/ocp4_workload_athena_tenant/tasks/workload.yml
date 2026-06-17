@@ -321,7 +321,60 @@
       athena_webhook_url: "{{ _ocp4_workload_athena_tenant_url }}/api/v1/webhook/aap2"
 
 # -------------------------------------------------------------------
-# 12. Launch seed job to pre-populate Kira (fire-and-forget)
+# 12a. Prewarm — run RHEL setup job and wait for it to complete
+# -------------------------------------------------------------------
+- name: Run prewarm job to pre-configure RHEL VM
+  when: ocp4_workload_athena_tenant_prewarm_job_enabled | bool
+  ignore_errors: true
+  block:
+    - name: Look up prewarm job template
+      ansible.builtin.uri:
+        url: >-
+          {{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/?name={{ ocp4_workload_athena_tenant_prewarm_job_name | urlencode }}&organization__name={{ ocp4_workload_athena_tenant_aap2_organization | urlencode }}
+        method: GET
+        user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+        password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+        status_code: 200
+      register: r_prewarm_template
+
+    - name: Launch prewarm job template
+      when: r_prewarm_template.json.count | default(0) > 0
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/job_templates/{{ r_prewarm_template.json.results[0].id }}/launch/"
+        method: POST
+        user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+        password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+        body_format: json
+        body: "{}"
+        status_code: 201
+      register: r_prewarm_job
+
+    - name: Wait for prewarm job to complete
+      when: r_prewarm_job is defined and r_prewarm_job is not skipped
+      ansible.builtin.uri:
+        url: "{{ _ocp4_workload_athena_tenant_aap2_url }}/api/controller/v2/jobs/{{ r_prewarm_job.json.id }}/"
+        method: GET
+        user: "{{ _ocp4_workload_athena_tenant_aap2_username }}"
+        password: "{{ _ocp4_workload_athena_tenant_aap2_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ ocp4_workload_athena_tenant_aap2_validate_certs }}"
+        status_code: 200
+      register: r_prewarm_status
+      until: r_prewarm_status.json.status in ['successful', 'failed', 'error', 'canceled']
+      retries: "{{ ocp4_workload_athena_tenant_prewarm_job_retries }}"
+      delay: "{{ ocp4_workload_athena_tenant_prewarm_job_delay }}"
+
+    - name: Log prewarm job result
+      when: r_prewarm_status is defined and r_prewarm_status is not skipped
+      ansible.builtin.debug:
+        msg: "Prewarm job {{ r_prewarm_job.json.id }} finished with status: {{ r_prewarm_status.json.status }}"
+
+# -------------------------------------------------------------------
+# 12b. Seed — launch failing job so Kira has a ticket on first login (fire-and-forget)
 # -------------------------------------------------------------------
 - name: Launch seed job to pre-populate Kira
   when: ocp4_workload_athena_tenant_seed_job_enabled | bool

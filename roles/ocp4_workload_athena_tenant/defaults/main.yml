@@ -49,6 +49,12 @@ ocp4_workload_athena_tenant_ops_manager_model: "openai/claude-sonnet-4-6"
 ocp4_workload_athena_tenant_specialist_model: "openai/claude-sonnet-4-6"
 ocp4_workload_athena_tenant_reviewer_model: "openai/claude-3-5-haiku"
 
+# Prewarm job — run before seed job to pre-configure the RHEL VM (waits for completion)
+ocp4_workload_athena_tenant_prewarm_job_enabled: true
+ocp4_workload_athena_tenant_prewarm_job_name: "00 RHEL Setup"
+ocp4_workload_athena_tenant_prewarm_job_retries: 20
+ocp4_workload_athena_tenant_prewarm_job_delay: 15
+
 # Seed job — launch a failing job during provisioning so Kira has a ticket on first login
 ocp4_workload_athena_tenant_seed_job_enabled: true
 ocp4_workload_athena_tenant_seed_job_name: "10 Install Python 3.14"
