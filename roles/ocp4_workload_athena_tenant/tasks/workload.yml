@@ -376,6 +376,18 @@
 # -------------------------------------------------------------------
 # 12b. Seed — launch failing job so Kira has a ticket on first login (fire-and-forget)
 # -------------------------------------------------------------------
+- name: Wait for Athena to be ready before seed job
+  when: ocp4_workload_athena_tenant_seed_job_enabled | bool
+  ansible.builtin.uri:
+    url: "{{ _ocp4_workload_athena_tenant_url }}/readyz"
+    method: GET
+    validate_certs: false
+    status_code: 200
+  register: r_athena_readyz
+  until: r_athena_readyz.status == 200
+  retries: 20
+  delay: 15
+
 - name: Launch seed job to pre-populate Kira
   when: ocp4_workload_athena_tenant_seed_job_enabled | bool
   block:
